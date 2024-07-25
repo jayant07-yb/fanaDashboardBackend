@@ -1,0 +1,126 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environment
+venv/
+new_venv/
+
+# PlatformIO build files
+.pio/
+
+# PlatformIO project settings
+platformio.ini
+
+# Python specific
+*.python-version
+*.env
+*.venv
+env/
+env.bak/
+*.pyc
+*.pyo
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code settings
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# JetBrains IDEs
+.idea/
+
+# Logs
+*.log
+
+# HTML, CSS, JS output directories
+dist/
+node_modules/
+
+# Local env files
+.env.local
+.env.*.local
+.envrc
+
+# Flask specific
+instance/
+.venv/
+
+# Debug logs
+logs/
+
+# Compiled source files
+*.out
+*.o
+*.class
+
+# Python egg files
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+sdist/
+develop-eggs/
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Sphinx documentation
+docs/_build/
+
+# Environments
+.env
+.env.*.local
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask specific
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# PyBuilder
+target/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
