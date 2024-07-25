@@ -124,3 +124,16 @@ target/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# PlatformIO
+.platformio/
+.piolibdeps/
+
+# Django static files
+staticfiles/
+
+# Django media files
+media/
+
+# Django migrations
+*/migrations/*
