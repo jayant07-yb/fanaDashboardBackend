@@ -21,4 +21,5 @@ void loop() {
   delay(1000); // Wait for a second
   digitalWrite(2, LOW); // Turn the LED off (GPIO 2)
   delay(1000); // Wait for a second
+  Serial.println("Hello Table 11");
 }
