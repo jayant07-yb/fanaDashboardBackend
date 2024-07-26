@@ -29,6 +29,8 @@ void sendRequest(const char* requestType) {
     http.addHeader("Content-Type", "application/json");
     
     String payload = "{\"request_type\": \"" + String(requestType) + "\", \"table_id\": \"" + String(table_id) + "\"}";
+    Serial.println(payload);
+
     int httpResponseCode = http.POST(payload);
     
     if (httpResponseCode > 0) {
