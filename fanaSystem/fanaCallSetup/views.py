@@ -19,7 +19,7 @@ def get_com_ports():
     return [(port.device, port.description) for port in ports]
 
 # In your setup_view function, pass the available COM ports to the template
-def setup_view(request):
+def fana_call_setup_view(request):
     if request.method == 'POST':
         form = SetupForm(request.POST)
         if form.is_valid():
