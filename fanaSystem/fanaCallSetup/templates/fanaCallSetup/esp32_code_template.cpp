@@ -1,25 +1,71 @@
 #include <WiFi.h>
+#include <HTTPClient.h> // Include HTTPClient library
 
 const char* ssid = "{wifi_name}";
 const char* password = "{wifi_password}";
+const char* serverUrl = "{server_url}";
+
+const int buttonPin1 = 5;  // GPIO5
+const int buttonPin2 = 4;  // GPIO4
+const int buttonPin3 = 0;  // GPIO0
+const int buttonPin4 = 2;  // GPIO2
+
+const char* table_id = "{table_id}";
+
+void connectToWiFi() {
+  Serial.println("Connecting to WiFi...");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting...");
+  }
+  Serial.println("Connected to WiFi");
+}
+
+void sendRequest(const char* requestType) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(serverUrl);
+    http.addHeader("Content-Type", "application/json");
+    
+    String payload = "{\"request_type\": \"" + String(requestType) + "\", \"table_id\": \"" + String(table_id) + "\"}";
+    int httpResponseCode = http.POST(payload);
+    
+    if (httpResponseCode > 0) {
+      String response = http.getString();
+      Serial.println(httpResponseCode);
+      Serial.println(response);
+    } else {
+      Serial.println("Error on sending POST");
+    }
+    http.end();
+  }
+}
 
 void setup() {
-  pinMode(2, OUTPUT); // Use GPIO 2 for the built-in LED
   Serial.begin(115200);
-  WiFi.begin(ssid, password);
+  delay(10);
+  
+  pinMode(buttonPin1, INPUT_PULLUP);
+  pinMode(buttonPin2, INPUT_PULLUP);
+  pinMode(buttonPin3, INPUT_PULLUP);
+  pinMode(buttonPin4, INPUT_PULLUP);
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("WiFi connected");
+  connectToWiFi();
 }
 
 void loop() {
-  digitalWrite(2, HIGH); // Turn the LED on (GPIO 2)
-  delay(1000); // Wait for a second
-  digitalWrite(2, LOW); // Turn the LED off (GPIO 2)
-  delay(1000); // Wait for a second
-  Serial.println("Hello Table {table_id}");
+  if (digitalRead(buttonPin1) == LOW) {
+    sendRequest("call_waiter");
+  }
+  if (digitalRead(buttonPin2) == LOW) {
+    sendRequest("bring_bill");
+  }
+  if (digitalRead(buttonPin3) == LOW) {
+    sendRequest("order");
+  }
+  if (digitalRead(buttonPin4) == LOW) {
+    sendRequest("bring_water");
+  }
+  delay(200);  // Debounce delay
 }

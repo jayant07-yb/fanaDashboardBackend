@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Dashboard</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Request Dashboard</h1>
+    <table>
+        <tr>
+            <th>Request ID</th>
+            <th>Request Type</th>
+            <th>Table ID</th>
+            <th>Timestamp</th>
+        </tr>
+        {% for request in requests %}
+        <tr>
+            <td>{{ request.id }}</td>
+            <td>{{ request.get_request_type_display }}</td>
+            <td>{{ request.table_id }}</td>
+            <td>{{ request.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

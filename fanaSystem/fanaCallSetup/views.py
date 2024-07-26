@@ -1,25 +1,32 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 from .forms import SetupForm
+from .models import FanaCallRequest
+import json
 import subprocess
 import os
-from tqdm import tqdm
 import time
+from tqdm import tqdm
 import serial.tools.list_ports
-
-def generate_esp32_code(wifi_name, wifi_password, table_id):
-    template_path = os.path.join(os.path.dirname(__file__), 'templates', 'fanaCallSetup', 'esp32_code_template.cpp')
-    with open(template_path, 'r') as template_file:
-        code = template_file.read()
-    code = code.replace('{wifi_name}', wifi_name).replace('{wifi_password}', wifi_password).replace('{table_id}', table_id)
-    return code
 
 def get_com_ports():
     ports = serial.tools.list_ports.comports()
-    return [(port.device, port.description) for port in ports]
+    return [(port.device, f"{port.device} - {port.description}") for port in ports]
 
-# In your setup_view function, pass the available COM ports to the template
+def generate_esp32_code(wifi_name, wifi_password, server_url, table_id):
+    template_path = os.path.join(os.path.dirname(__file__), 'templates', 'fanaCallSetup', 'esp32_code_template.cpp')
+    with open(template_path, 'r') as template_file:
+        code = template_file.read()
+    code = code.replace('{wifi_name}', wifi_name)
+    code = code.replace('{wifi_password}', wifi_password)
+    code = code.replace('{server_url}', server_url)
+    code = code.replace('{table_id}', table_id)
+    return code
+
 def fana_call_setup_view(request):
+    com_ports = get_com_ports()
     if request.method == 'POST':
         form = SetupForm(request.POST)
         if form.is_valid():
@@ -28,7 +35,9 @@ def fana_call_setup_view(request):
             wifi_password = form.cleaned_data['wifi_password']
             port = form.cleaned_data['port']
 
-            code = generate_esp32_code(wifi_name, wifi_password, table_id)
+            server_url = request.build_absolute_uri('/fanaCall/handleFanaCall/')  # Dynamically get the server URL
+
+            code = generate_esp32_code(wifi_name, wifi_password, server_url, table_id)
 
             src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
             if not os.path.exists(src_dir):
@@ -66,4 +75,23 @@ def fana_call_setup_view(request):
             return JsonResponse(response)
     else:
         form = SetupForm()
-    return render(request, 'setup.html', {'form': form})
+    return render(request, 'fanaCallSetup/setup.html', {'form': form, 'com_ports': com_ports})
+
+@csrf_exempt
+def handle_fana_call(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        request_type = data.get('request_type')
+        table_id = data.get('table_id')
+
+        # Save the request to the database
+        new_request = FanaCallRequest(
+            request_type=request_type,
+            table_id=table_id,
+            timestamp=timezone.now()
+        )
+        new_request.save()
+
+        return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
