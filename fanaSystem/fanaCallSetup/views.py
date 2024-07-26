@@ -8,6 +8,7 @@ import json
 import subprocess
 import os
 import time
+import socket
 from tqdm import tqdm
 import serial.tools.list_ports
 
@@ -15,7 +16,14 @@ def get_com_ports():
     ports = serial.tools.list_ports.comports()
     return [(port.device, f"{port.device} - {port.description}") for port in ports]
 
-def generate_esp32_code(wifi_name, wifi_password, server_url, table_id):
+def get_server_ip():
+    hostname = socket.gethostname()
+    ip_address = socket.gethostbyname(hostname)
+    return ip_address
+
+def generate_esp32_code(wifi_name, wifi_password, table_id):
+    server_ip = get_server_ip()
+    server_url = f"http://{server_ip}:8000/fanaCall/handleFanaCall/"
     template_path = os.path.join(os.path.dirname(__file__), 'templates', 'fanaCallSetup', 'esp32_code_template.cpp')
     with open(template_path, 'r') as template_file:
         code = template_file.read()
@@ -35,9 +43,7 @@ def fana_call_setup_view(request):
             wifi_password = form.cleaned_data['wifi_password']
             port = form.cleaned_data['port']
 
-            server_url = request.build_absolute_uri('/fanaCall/handleFanaCall/')  # Dynamically get the server URL
-
-            code = generate_esp32_code(wifi_name, wifi_password, server_url, table_id)
+            code = generate_esp32_code(wifi_name, wifi_password, table_id)
 
             src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
             if not os.path.exists(src_dir):

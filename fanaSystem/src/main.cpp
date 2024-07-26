@@ -1,16 +1,16 @@
 #include <WiFi.h>
 #include <HTTPClient.h> // Include HTTPClient library
 
-const char* ssid = "ads";
-const char* password = "asd";
-const char* serverUrl = "http://127.0.0.1:8000/fanaCall/handleFanaCall/";
+const char* ssid = "comp";
+const char* password = "P90962u$";
+const char* serverUrl = "http://192.168.1.5:8000/fanaCall/handleFanaCall/";
 
 const int buttonPin1 = 5;  // GPIO5
 const int buttonPin2 = 4;  // GPIO4
 const int buttonPin3 = 0;  // GPIO0
 const int buttonPin4 = 2;  // GPIO2
 
-const char* table_id = "das";
+const char* table_id = "11";
 
 void connectToWiFi() {
   Serial.println("Connecting to WiFi...");
@@ -29,6 +29,8 @@ void sendRequest(const char* requestType) {
     http.addHeader("Content-Type", "application/json");
     
     String payload = "{\"request_type\": \"" + String(requestType) + "\", \"table_id\": \"" + String(table_id) + "\"}";
+    Serial.println(payload);
+
     int httpResponseCode = http.POST(payload);
     
     if (httpResponseCode > 0) {
