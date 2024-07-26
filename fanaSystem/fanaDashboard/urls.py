@@ -18,5 +18,5 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.dashboard_view, name='handleFanaCall'),
+    path('', views.dashboard_view, name='fanaDashboard'),
 ]

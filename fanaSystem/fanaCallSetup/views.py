@@ -83,6 +83,7 @@ def fana_call_setup_view(request):
         form = SetupForm()
     return render(request, 'fanaCallSetup/setup.html', {'form': form, 'com_ports': com_ports})
 
+
 @csrf_exempt
 def handle_fana_call(request):
     if request.method == 'POST':
@@ -90,13 +91,21 @@ def handle_fana_call(request):
         request_type = data.get('request_type')
         table_id = data.get('table_id')
 
-        # Save the request to the database
-        new_request = FanaCallRequest(
-            request_type=request_type,
-            table_id=table_id,
-            timestamp=timezone.now()
-        )
-        new_request.save()
+        # Retrieve or create the FanaCallRequest object
+        table_request, created = FanaCallRequest.objects.get_or_create(table_id=table_id)
+
+        # Update the corresponding state based on the request type
+        if request_type == 'call_waiter':
+            table_request.call_waiter_state = 'pressed'
+        elif request_type == 'bring_bill':
+            table_request.bring_bill_state = 'pressed'
+        elif request_type == 'order':
+            table_request.order_state = 'pressed'
+        elif request_type == 'bring_water':
+            table_request.bring_water_state = 'pressed'
+
+        table_request.timestamp = timezone.now()
+        table_request.save()
 
         return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
     else:

@@ -2,17 +2,18 @@ from django.db import models
 from django.utils import timezone
 
 class FanaCallRequest(models.Model):
-    REQUEST_TYPES = [
-        ('call_waiter', 'Call Waiter'),
-        ('bring_bill', 'Bring Bill'),
-        ('order', 'Order'),
-        ('bring_water', 'Bring Water')
+    TABLE_STATES = [
+        ('pressed', 'Pressed'),
+        ('not_pressed', 'Not Pressed'),
+        ('in_progress', 'In Progress')
     ]
     
-    request_type = models.CharField(max_length=20, choices=REQUEST_TYPES)
-    table_id = models.CharField(max_length=20)
+    table_id = models.CharField(max_length=20, unique=True)
+    call_waiter_state = models.CharField(max_length=20, choices=TABLE_STATES, default='not_pressed')
+    bring_bill_state = models.CharField(max_length=20, choices=TABLE_STATES, default='not_pressed')
+    order_state = models.CharField(max_length=20, choices=TABLE_STATES, default='not_pressed')
+    bring_water_state = models.CharField(max_length=20, choices=TABLE_STATES, default='not_pressed')
     timestamp = models.DateTimeField(default=timezone.now)
-    handled = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.get_request_type_display()} from Table {self.table_id} at {self.timestamp}"
+        return f"Table {self.table_id} at {self.timestamp}"

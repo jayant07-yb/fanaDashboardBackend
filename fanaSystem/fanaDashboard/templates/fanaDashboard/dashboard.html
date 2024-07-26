@@ -13,25 +13,24 @@
         <table>
             <thead>
                 <tr>
-                    <th>Request ID</th>
                     <th>Table ID</th>
-                    <th>Request Type</th>
-                    <th>Timestamp</th>
+                    <th>Requests</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                {% for request in requests %}
+                {% for table_id, requests in tables.items %}
                 <tr>
-                    <td>{{ request.id }}</td>
-                    <td>{{ request.table_id }}</td>
-                    <td>{{ request.get_request_type_display }}</td>
-                    <td>{{ request.timestamp }}</td>
+                    <td>{{ table_id }}</td>
+                    <td>{{ requests|join:", " }}</td>
                     <td>
-                        <form method="post">
+                        <form method="post" action="{% url 'fanaDashboard' %}">
                             {% csrf_token %}
-                            <input type="hidden" name="request_id" value="{{ request.id }}">
-                            <button type="submit">Handle</button>
+                            <input type="hidden" name="table_id" value="{{ table_id }}">
+                            {% for request in requests %}
+                                <input type="hidden" name="button_type" value="{{ request|slugify }}">
+                                <button type="submit">Handle {{ request }}</button>
+                            {% endfor %}
                         </form>
                     </td>
                 </tr>
