@@ -1,7 +1,11 @@
 Commands to run the project
 
 ```bash
-python manage.py runserver
+set DJANGO_SETTINGS_MODULE=fanaSystem.settings
+daphne -u /tmp/daphne.sock fanaSystem.asgi:application
+
+
+python manage.py runserver 0.0.0.0:8000
 python manage.py collectstatic
 python manage.py makemigrations fanaCallSetup
 python manage.py migrate

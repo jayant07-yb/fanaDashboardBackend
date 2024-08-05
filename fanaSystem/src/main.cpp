@@ -1,73 +1,108 @@
-#include <WiFi.h>
-#include <HTTPClient.h> // Include HTTPClient library
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+extern "C" {
+  #include "user_interface.h"
+  #include "gpio.h"
+}
 
+// Constants
 const char* ssid = "comp";
 const char* password = "P90962u$";
 const char* serverUrl = "http://192.168.1.5:8000/fanaCall/handleFanaCall/";
+const char* table_id = "12";
 
-const int buttonPin1 = 5;  // GPIO5
-const int buttonPin2 = 4;  // GPIO4
-const int buttonPin3 = 0;  // GPIO0
-const int buttonPin4 = 2;  // GPIO2
-
-const char* table_id = "11";
+// Create a WiFiClient object
+WiFiClient wifiClient;
 
 void connectToWiFi() {
-  Serial.println("Connecting to WiFi...");
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting...");
-  }
-  Serial.println("Connected to WiFi");
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    unsigned long startTime = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - startTime) < 10000) { // Increase timeout to 10 seconds
+        delay(500);
+        Serial.print(".");
+    }
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("Connected to WiFi");
+    } else {
+        Serial.println("Failed to connect to WiFi");
+    }
 }
 
-void sendRequest(const char* requestType) {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin(serverUrl);
-    http.addHeader("Content-Type", "application/json");
-    
-    String payload = "{\"request_type\": \"" + String(requestType) + "\", \"table_id\": \"" + String(table_id) + "\"}";
-    Serial.println(payload);
+void sendCombinedRequest(const char* combinedState) {
+    if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        http.begin(wifiClient, serverUrl);
 
-    int httpResponseCode = http.POST(payload);
-    
-    if (httpResponseCode > 0) {
-      String response = http.getString();
-      Serial.println(httpResponseCode);
-      Serial.println(response);
-    } else {
-      Serial.println("Error on sending POST");
+        http.addHeader("Content-Type", "application/json");
+
+        String payload = "{\"combined_state\": \"" + String(combinedState) + "\", \"table_id\": \"" + String(table_id) + "\"}";
+        Serial.println(payload);
+
+        int httpResponseCode = http.POST(payload);
+
+        if (httpResponseCode > 0) {
+            String response = http.getString();
+            Serial.println(httpResponseCode);
+            Serial.println(response);
+        } else {
+            Serial.println("Error on sending POST");
+        }
+        http.end();
     }
-    http.end();
-  }
+}
+
+void lightSleep() {
+    wifi_station_disconnect();
+    wifi_set_opmode_current(NULL_MODE);
+    wifi_fpm_set_sleep_type(LIGHT_SLEEP_T); // set sleep type
+    wifi_fpm_open(); // Enables force sleep
+    // Set GPIOs to wake up
+    gpio_pin_wakeup_enable(GPIO_ID_PIN(2), GPIO_PIN_INTR_ANYEDGE); 
+    gpio_pin_wakeup_enable(GPIO_ID_PIN(4), GPIO_PIN_INTR_ANYEDGE); 
+    gpio_pin_wakeup_enable(GPIO_ID_PIN(5), GPIO_PIN_INTR_ANYEDGE); 
+    gpio_pin_wakeup_enable(GPIO_ID_PIN(14), GPIO_PIN_INTR_ANYEDGE); 
+    wifi_fpm_do_sleep(0xFFFFFFF); // Sleep for longest possible time
+}
+
+void IRAM_ATTR handleInterrupt() {
+    // Empty handler to wake up ESP8266 from light sleep
 }
 
 void setup() {
-  Serial.begin(115200);
-  delay(10);
-  
-  pinMode(buttonPin1, INPUT_PULLUP);
-  pinMode(buttonPin2, INPUT_PULLUP);
-  pinMode(buttonPin3, INPUT_PULLUP);
-  pinMode(buttonPin4, INPUT_PULLUP);
+    Serial.begin(115200);
+    delay(10);
 
-  connectToWiFi();
+    pinMode(D1, INPUT_PULLUP);
+    pinMode(D2, INPUT_PULLUP);
+    pinMode(D3, INPUT_PULLUP);
+    pinMode(D4, INPUT_PULLUP);
+
+    attachInterrupt(digitalPinToInterrupt(D1), handleInterrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(D2), handleInterrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(D3), handleInterrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(D4), handleInterrupt, CHANGE);
+
+    connectToWiFi();
 }
 
 void loop() {
-  if (digitalRead(buttonPin1) == LOW) {
-    sendRequest("call_waiter");
-  }
-  if (digitalRead(buttonPin2) == LOW) {
-    sendRequest("bring_bill");
-  }
-  if (digitalRead(buttonPin3) == LOW) {
-    sendRequest("order");
-  }
-  if (digitalRead(buttonPin4) == LOW) {
-    sendRequest("bring_water");
-  }
-  delay(200);  // Debounce delay
+    // Create a combined state string
+    char combinedState[5];
+    combinedState[0] = digitalRead(D1) == LOW ? '1' : '0';
+    combinedState[1] = digitalRead(D2) == LOW ? '1' : '0';
+    combinedState[2] = digitalRead(D3) == LOW ? '1' : '0';
+    combinedState[3] = digitalRead(D4) == LOW ? '1' : '0';
+    combinedState[4] = '\0'; // Null-terminate the string
+
+    // Reconnect to WiFi upon waking up
+    connectToWiFi();
+    
+    // Send the combined state
+    sendCombinedRequest(combinedState);
+
+    // Enter light sleep mode
+    lightSleep();
+    delay(200);  // Ensure the sleep mode is entered
+    Serial.println("Wake up");
 }

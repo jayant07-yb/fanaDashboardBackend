@@ -38,10 +38,13 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "daphne",
     "django.contrib.staticfiles",
-    "fanaCallSetup",
     "fanaDashboard",
+    "fanaCallSetup",
 ]
+
+ASGI_APPLICATION = 'fanaSystem.asgi.application'
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

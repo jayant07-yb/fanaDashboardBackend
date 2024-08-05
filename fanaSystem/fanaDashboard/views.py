@@ -1,12 +1,14 @@
 from django.shortcuts import render, redirect
 from fanaCallSetup.models import FanaCallRequest
 from django.views.decorators.csrf import csrf_exempt
-from django.urls import reverse
+
+global data_changed
+data_changed = False
 
 @csrf_exempt
 def dashboard_view(request):
+    global data_changed
     if request.method == 'POST':
-        request_id = request.POST.get('request_id')
         button_type = request.POST.get('button_type')
         table_id = request.POST.get('table_id')
         request_to_handle = FanaCallRequest.objects.get(table_id=table_id)
@@ -22,7 +24,9 @@ def dashboard_view(request):
             request_to_handle.bring_water_state = 'in_progress'
 
         request_to_handle.save()
-        return redirect(reverse('fanaDashboard'))
+        data_changed = True  # Set the flag to indicate data has changed
+
+        return redirect('fanaDashboard')
 
     # Aggregate the active requests for each table
     requests = FanaCallRequest.objects.filter(

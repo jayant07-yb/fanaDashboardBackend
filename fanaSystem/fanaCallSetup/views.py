@@ -53,27 +53,26 @@ def fana_call_setup_view(request):
 
             try:
                 pio_project_dir = os.path.join(os.path.dirname(__file__), '..')
-                with tqdm(total=100, desc="Compiling and Uploading", ncols=100) as pbar:
-                    for i in range(10):
-                        pbar.update(10)
-                        time.sleep(0.5)  # Simulate progress
 
-                    env = os.environ.copy()
-                    env['PLATFORMIO_UPLOAD_PORT'] = port
-                    result = subprocess.run(
-                        ['platformio', 'run', '-t', 'upload'],
-                        cwd=pio_project_dir,
-                        check=True,
-                        env=env,
-                        capture_output=True
-                    )
-                    pbar.update(10)
+                env = os.environ.copy()
+                env['PLATFORMIO_UPLOAD_PORT'] = port
+                result = subprocess.run(
+                    ['platformio', 'run', '-t', 'upload'],
+                    cwd=pio_project_dir,
+                    check=True,
+                    env=env,
+                    capture_output=True
+                )
+
                 response = {
                     'status': 'success',
                     'output': result.stdout.decode(),
                     'message': f'Success message for table {table_id}'
                 }
             except subprocess.CalledProcessError as e:
+                print("Got error: ")
+                print(e.stderr.decode())
+
                 response = {
                     'status': 'error',
                     'message': e.stderr.decode()
@@ -84,29 +83,29 @@ def fana_call_setup_view(request):
     return render(request, 'fanaCallSetup/setup.html', {'form': form, 'com_ports': com_ports})
 
 
+
 @csrf_exempt
 def handle_fana_call(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        request_type = data.get('request_type')
+        combined_state = data.get('combined_state')
         table_id = data.get('table_id')
 
-        # Retrieve or create the FanaCallRequest object
-        table_request, created = FanaCallRequest.objects.get_or_create(table_id=table_id)
+        if combined_state and table_id:
+            # Retrieve or create the FanaCallRequest object
+            table_request, created = FanaCallRequest.objects.get_or_create(table_id=table_id)
 
-        # Update the corresponding state based on the request type
-        if request_type == 'call_waiter':
-            table_request.call_waiter_state = 'pressed'
-        elif request_type == 'bring_bill':
-            table_request.bring_bill_state = 'pressed'
-        elif request_type == 'order':
-            table_request.order_state = 'pressed'
-        elif request_type == 'bring_water':
-            table_request.bring_water_state = 'pressed'
+            # Update the corresponding states based on the combined state
+            table_request.call_waiter_state = 'pressed' if combined_state[0] == '1' else 'released'
+            table_request.bring_bill_state = 'pressed' if combined_state[1] == '1' else 'released'
+            table_request.order_state = 'pressed' if combined_state[2] == '1' else 'released'
+            table_request.bring_water_state = 'pressed' if combined_state[3] == '1' else 'released'
 
-        table_request.timestamp = timezone.now()
-        table_request.save()
+            table_request.timestamp = timezone.now()
+            table_request.save()
 
-        return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
+            return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)

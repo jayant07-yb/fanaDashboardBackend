@@ -10,7 +10,7 @@
 <body>
     <div class="container">
         <h1>Activity Dashboard</h1>
-        <table>
+        <table id="requests-table">
             <thead>
                 <tr>
                     <th>Table ID</th>
@@ -20,7 +20,7 @@
             </thead>
             <tbody>
                 {% for table_id, requests in tables.items %}
-                <tr>
+                <tr data-table-id="{{ table_id }}">
                     <td>{{ table_id }}</td>
                     <td>{{ requests|join:", " }}</td>
                     <td>
@@ -38,5 +38,38 @@
             </tbody>
         </table>
     </div>
+    <script>
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/dashboard/');
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const requests = data.requests;
+
+            // Clear the table
+            const table = document.getElementById('requests-table').querySelector('tbody');
+            table.innerHTML = '';
+
+            // Rebuild the table with updated data
+            requests.forEach(request => {
+                const newRow = document.createElement('tr');
+                newRow.setAttribute('data-table-id', request.table_id);
+                newRow.innerHTML = `
+                    <td>${request.table_id}</td>
+                    <td>${Object.keys(request).filter(key => request[key] === 'pressed').join(', ')}</td>
+                    <td>
+                        <form method="post" action="{% url 'fanaDashboard' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="table_id" value="${request.table_id}">
+                            ${Object.keys(request).filter(key => request[key] === 'pressed').map(key => `
+                                <input type="hidden" name="button_type" value="${key}">
+                                <button type="submit">Handle ${key.replace('_', ' ')}</button>
+                            `).join('')}
+                        </form>
+                    </td>
+                `;
+                table.appendChild(newRow);
+            });
+        };
+    </script>
 </body>
 </html>
