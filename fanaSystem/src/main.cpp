@@ -2,14 +2,13 @@
 #include <ESP8266HTTPClient.h>
 extern "C" {
   #include "user_interface.h"
-  #include "gpio.h"
 }
 
 // Constants
 const char* ssid = "comp";
-const char* password = "P90962u$";
-const char* serverUrl = "http://192.168.1.5:8000/fanaCall/handleFanaCall/";
-const char* table_id = "12";
+const char* password = "esp8266";
+const char* serverUrl = "http://192.168.137.1:8000/fanaCall/handleFanaCall/";
+const char* table_id = "11";
 
 // Create a WiFiClient object
 WiFiClient wifiClient;
@@ -52,23 +51,6 @@ void sendCombinedRequest(const char* combinedState) {
     }
 }
 
-void lightSleep() {
-    wifi_station_disconnect();
-    wifi_set_opmode_current(NULL_MODE);
-    wifi_fpm_set_sleep_type(LIGHT_SLEEP_T); // set sleep type
-    wifi_fpm_open(); // Enables force sleep
-    // Set GPIOs to wake up
-    gpio_pin_wakeup_enable(GPIO_ID_PIN(2), GPIO_PIN_INTR_ANYEDGE); 
-    gpio_pin_wakeup_enable(GPIO_ID_PIN(4), GPIO_PIN_INTR_ANYEDGE); 
-    gpio_pin_wakeup_enable(GPIO_ID_PIN(5), GPIO_PIN_INTR_ANYEDGE); 
-    gpio_pin_wakeup_enable(GPIO_ID_PIN(14), GPIO_PIN_INTR_ANYEDGE); 
-    wifi_fpm_do_sleep(0xFFFFFFF); // Sleep for longest possible time
-}
-
-void IRAM_ATTR handleInterrupt() {
-    // Empty handler to wake up ESP8266 from light sleep
-}
-
 void setup() {
     Serial.begin(115200);
     delay(10);
@@ -78,11 +60,7 @@ void setup() {
     pinMode(D3, INPUT_PULLUP);
     pinMode(D4, INPUT_PULLUP);
 
-    attachInterrupt(digitalPinToInterrupt(D1), handleInterrupt, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(D2), handleInterrupt, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(D3), handleInterrupt, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(D4), handleInterrupt, CHANGE);
-
+    // No need to attach interrupt, ESP8266 will wake up from deep sleep automatically on reset
     connectToWiFi();
 }
 
@@ -95,14 +73,10 @@ void loop() {
     combinedState[3] = digitalRead(D4) == LOW ? '1' : '0';
     combinedState[4] = '\0'; // Null-terminate the string
 
-    // Reconnect to WiFi upon waking up
-    connectToWiFi();
-    
     // Send the combined state
     sendCombinedRequest(combinedState);
 
-    // Enter light sleep mode
-    lightSleep();
+    // Enter deep sleep mode
+    ESP.deepSleep(0); // Sleep forever, wakes up on external wakeup
     delay(200);  // Ensure the sleep mode is entered
-    Serial.println("Wake up");
 }

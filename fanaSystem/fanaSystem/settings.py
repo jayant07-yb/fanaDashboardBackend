@@ -135,3 +135,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'fanaDashboard', 'static'),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+LOGIN_URL = 'fanaDashboard/login/'
+LOGOUT_REDIRECT_URL = 'fanaDashboard/login/'
+LOGIN_REDIRECT_URL = 'fanaDashboard'

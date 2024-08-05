@@ -1,10 +1,37 @@
 from django.shortcuts import render, redirect
-from fanaCallSetup.models import FanaCallRequest
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from fanaCallSetup.models import FanaCallRequest
+from django.contrib.auth.models import User
 
 global data_changed
 data_changed = False
 
+def signup_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('fanaDashboard')
+    else:
+        form = UserCreationForm()
+    return render(request, 'signup.html', {'form': form})
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('fanaDashboard')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'login.html', {'form': form})
+
+@login_required
 @csrf_exempt
 def dashboard_view(request):
     global data_changed
@@ -23,6 +50,7 @@ def dashboard_view(request):
         elif button_type == 'bring_water':
             request_to_handle.bring_water_state = 'in_progress'
 
+        request_to_handle.handled_by = request.user  # Save the user who handled the request
         request_to_handle.save()
         data_changed = True  # Set the flag to indicate data has changed
 
