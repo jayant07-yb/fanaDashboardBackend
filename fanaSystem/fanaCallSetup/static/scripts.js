@@ -8,7 +8,7 @@ document.getElementById('setup-form').addEventListener('submit', function(event)
     const submitButton = this.querySelector('button[type="submit"]');
     submitButton.disabled = true;
 
-    fetch('/fanaCall/setup/', { // Update the URL here
+    fetch('/fanaCall/', {
         method: 'POST',
         headers: {
             'X-CSRFToken': formData.get('csrfmiddlewaretoken')

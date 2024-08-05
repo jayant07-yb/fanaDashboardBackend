@@ -6,8 +6,8 @@ extern "C" {
 
 // Constants
 const char* ssid = "comp";
-const char* password = "esp8266";
-const char* serverUrl = "http://192.168.137.1:8000/fanaCall/handleFanaCall/";
+const char* password = "P90962u$";
+const char* serverUrl = "http://192.168.1.6:8000/fanaDashboard/handleFanaCall/";
 const char* table_id = "11";
 
 // Create a WiFiClient object
@@ -52,7 +52,7 @@ void sendCombinedRequest(const char* combinedState) {
 }
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     delay(10);
 
     pinMode(D1, INPUT_PULLUP);

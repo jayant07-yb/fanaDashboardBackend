@@ -52,7 +52,7 @@ void sendCombinedRequest(const char* combinedState) {
 }
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     delay(10);
 
     pinMode(D1, INPUT_PULLUP);

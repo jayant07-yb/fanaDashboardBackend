@@ -5,6 +5,12 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from fanaCallSetup.models import FanaCallRequest
 from django.contrib.auth.models import User
+from django.shortcuts import render, redirect
+from fanaCallSetup.models import FanaCallRequest
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.utils import timezone
+import json
 
 global data_changed
 data_changed = False
@@ -18,7 +24,7 @@ def signup_view(request):
             return redirect('fanaDashboard')
     else:
         form = UserCreationForm()
-    return render(request, 'signup.html', {'form': form})
+    return render(request, 'fanaDashboard/signup.html', {'form': form})
 
 def login_view(request):
     if request.method == 'POST':
@@ -29,10 +35,36 @@ def login_view(request):
             return redirect('fanaDashboard')
     else:
         form = AuthenticationForm()
-    return render(request, 'login.html', {'form': form})
+    return render(request, 'fanaDashboard/login.html', {'form': form})
 
-@login_required
 @csrf_exempt
+def handle_fana_call(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        combined_state = data.get('combined_state')
+        table_id = data.get('table_id')
+
+        if combined_state and table_id:
+            # Retrieve or create the FanaCallRequest object
+            table_request, created = FanaCallRequest.objects.get_or_create(table_id=table_id)
+
+            # Update the corresponding states based on the combined state
+            table_request.call_waiter_state = 'pressed' if combined_state[0] == '1' else 'released'
+            table_request.bring_bill_state = 'pressed' if combined_state[1] == '1' else 'released'
+            table_request.order_state = 'pressed' if combined_state[2] == '1' else 'released'
+            table_request.bring_water_state = 'pressed' if combined_state[3] == '1' else 'released'
+
+            table_request.timestamp = timezone.now()
+            table_request.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+@csrf_exempt
+@login_required
 def dashboard_view(request):
     global data_changed
     if request.method == 'POST':
@@ -50,7 +82,7 @@ def dashboard_view(request):
         elif button_type == 'bring_water':
             request_to_handle.bring_water_state = 'in_progress'
 
-        request_to_handle.handled_by = request.user  # Save the user who handled the request
+        request_to_handle.handled_by = request.user
         request_to_handle.save()
         data_changed = True  # Set the flag to indicate data has changed
 

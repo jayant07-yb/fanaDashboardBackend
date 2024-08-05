@@ -14,9 +14,15 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+# fanaDashboard/urls.py
 from django.urls import path
 from . import views
+from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
     path('', views.dashboard_view, name='fanaDashboard'),
+    path('handleFanaCall/', views.handle_fana_call, name='handleFanaCall'),
+    path('login/', views.login_view, name='login'),
+    path('signup/', views.signup_view, name='signup'),
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 ]

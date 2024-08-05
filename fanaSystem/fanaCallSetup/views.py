@@ -23,7 +23,7 @@ def get_server_ip():
 
 def generate_esp32_code(wifi_name, wifi_password, table_id):
     server_ip = get_server_ip()
-    server_url = f"http://{server_ip}:8000/fanaCall/handleFanaCall/"
+    server_url = f"http://{server_ip}:8000/fanaDashboard/handleFanaCall/"
     template_path = os.path.join(os.path.dirname(__file__), 'templates', 'fanaCallSetup', 'esp32_code_template.cpp')
     with open(template_path, 'r') as template_file:
         code = template_file.read()
@@ -81,31 +81,3 @@ def fana_call_setup_view(request):
     else:
         form = SetupForm()
     return render(request, 'fanaCallSetup/setup.html', {'form': form, 'com_ports': com_ports})
-
-
-
-@csrf_exempt
-def handle_fana_call(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        combined_state = data.get('combined_state')
-        table_id = data.get('table_id')
-
-        if combined_state and table_id:
-            # Retrieve or create the FanaCallRequest object
-            table_request, created = FanaCallRequest.objects.get_or_create(table_id=table_id)
-
-            # Update the corresponding states based on the combined state
-            table_request.call_waiter_state = 'pressed' if combined_state[0] == '1' else 'released'
-            table_request.bring_bill_state = 'pressed' if combined_state[1] == '1' else 'released'
-            table_request.order_state = 'pressed' if combined_state[2] == '1' else 'released'
-            table_request.bring_water_state = 'pressed' if combined_state[3] == '1' else 'released'
-
-            table_request.timestamp = timezone.now()
-            table_request.save()
-
-            return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
-        else:
-            return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
-    else:
-        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
