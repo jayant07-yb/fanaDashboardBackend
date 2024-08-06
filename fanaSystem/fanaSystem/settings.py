@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "fanaDashboard",
     "fanaCallSetup",
+    "fanaInsight",
 ]
 
 ASGI_APPLICATION = 'fanaSystem.asgi.application'

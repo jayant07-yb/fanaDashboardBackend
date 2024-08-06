@@ -21,5 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('fanaCall/', include('fanaCallSetup.urls')),
     path('fanaDashboard/', include('fanaDashboard.urls')),
+    path('fanaInsight/', include('fanaInsight.urls')),
 ]
 

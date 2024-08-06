@@ -7,7 +7,7 @@ from fanaCallSetup.models import FanaCallRequest
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from fanaCallSetup.models import FanaCallRequest
-from django.views.decorators.csrf import csrf_exempt
+from fanaInsight.models import TableActivity, UserActivity
 from django.http import JsonResponse
 from django.utils import timezone
 import json
@@ -43,12 +43,11 @@ def handle_fana_call(request):
         data = json.loads(request.body)
         combined_state = data.get('combined_state')
         table_id = data.get('table_id')
+        user_id = data.get('user_id')  # Assuming user_id is passed in the request
 
         if combined_state and table_id:
-            # Retrieve or create the FanaCallRequest object
             table_request, created = FanaCallRequest.objects.get_or_create(table_id=table_id)
 
-            # Update the corresponding states based on the combined state
             table_request.call_waiter_state = 'pressed' if combined_state[0] == '1' else 'released'
             table_request.bring_bill_state = 'pressed' if combined_state[1] == '1' else 'released'
             table_request.order_state = 'pressed' if combined_state[2] == '1' else 'released'
@@ -56,6 +55,33 @@ def handle_fana_call(request):
 
             table_request.timestamp = timezone.now()
             table_request.save()
+
+            is_active = any(state == '1' for state in combined_state)
+            user = User.objects.get(id=user_id) if user_id else None
+
+            TableActivity.objects.create(
+                table_id=table_id,
+                is_active=is_active,
+                user=user,
+                timestamp=timezone.now()
+            )
+
+            if user:
+                UserActivity.objects.create(
+                    user=user,
+                    is_active=is_active,
+                    table=TableActivity.objects.filter(table_id=table_id).last(),
+                    timestamp=timezone.now()
+                )
+
+            # Set user as inactive if the table becomes inactive
+            if not is_active and user:
+                UserActivity.objects.create(
+                    user=user,
+                    is_active=False,
+                    table=None,
+                    timestamp=timezone.now()
+                )
 
             return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
         else:
@@ -72,7 +98,6 @@ def dashboard_view(request):
         table_id = request.POST.get('table_id')
         request_to_handle = FanaCallRequest.objects.get(table_id=table_id)
 
-        # Update the corresponding state based on the button type
         if button_type == 'call_waiter':
             request_to_handle.call_waiter_state = 'in_progress'
         elif button_type == 'bring_bill':
@@ -84,11 +109,17 @@ def dashboard_view(request):
 
         request_to_handle.handled_by = request.user
         request_to_handle.save()
-        data_changed = True  # Set the flag to indicate data has changed
+        data_changed = True
+
+        UserActivity.objects.create(
+            user=request.user,
+            is_active=True,
+            table=TableActivity.objects.filter(table_id=table_id).last(),
+            timestamp=timezone.now()
+        )
 
         return redirect('fanaDashboard')
 
-    # Aggregate the active requests for each table
     requests = FanaCallRequest.objects.filter(
         call_waiter_state='pressed') | FanaCallRequest.objects.filter(
         bring_bill_state='pressed') | FanaCallRequest.objects.filter(
@@ -108,7 +139,6 @@ def dashboard_view(request):
         if table_request.bring_water_state == 'pressed':
             tables[table_request.table_id].append('Bring Water')
 
-    # Filter out tables with no active requests
     tables = {table_id: requests for table_id, requests in tables.items() if requests}
 
     return render(request, 'fanaDashboard/dashboard.html', {'tables': tables})

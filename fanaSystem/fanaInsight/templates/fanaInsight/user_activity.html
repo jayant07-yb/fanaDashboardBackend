@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Activity</title>
+    <script type="text/javascript" src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+    <style>
+        .chart-container {
+            width: 100%;
+            overflow-x: auto;  /* Enable horizontal scrolling */
+        }
+        #chartContainer {
+            height: 300px; 
+            width: 2000px; /* Adjust width to enable scrolling */
+        }
+    </style>
+    <script type="text/javascript">
+        window.onload = function () {
+            var data = JSON.parse('{{ activities|escapejs }}');
+            var dataPoints = data.map(function(d) {
+                return { x: new Date(d.timestamp), y: d.is_active };
+            });
+
+            // Define buffer time in milliseconds (e.g., 1 minute)
+            var bufferTime = 1 * 60 * 1000;
+
+            // Get the last y-value
+            var lastValue = dataPoints.length > 0 ? dataPoints[dataPoints.length - 1].y : 0;
+
+            // Add buffer timestamp at the end
+            if (dataPoints.length > 0) {
+                var lastTimestamp = new Date(dataPoints[dataPoints.length - 1].x);
+                var bufferedEndTimestamp = new Date(lastTimestamp.getTime() + bufferTime);
+                dataPoints.push({ x: bufferedEndTimestamp, y: lastValue });
+            }
+
+            var chart = new CanvasJS.Chart("chartContainer", {
+                title: {
+                    text: "User Activity"
+                },
+                axisX: {
+                    title: "Timeline",
+                    gridThickness: 2,
+                    valueFormatString: "DD MMM YYYY HH:mm:ss"
+                },
+                axisY: {
+                    title: "Activity",
+                    interval: 1,
+                    labelFormatter: function(e) {
+                        return e.value === 1 ? "Active" : "Inactive";
+                    }
+                },
+                data: [
+                    {        
+                        type: "stepArea",
+                        color: "red",
+                        fillOpacity: 0.2,
+                        lineThickness: 2,
+                        dataPoints: dataPoints
+                    }
+                ]
+            });
+
+            chart.render();
+        }
+    </script>
+</head>
+<body>
+    <h1>User Activity</h1>
+    <div class="chart-container">
+        <div id="chartContainer"></div>
+    </div>
+</body>
+</html>
