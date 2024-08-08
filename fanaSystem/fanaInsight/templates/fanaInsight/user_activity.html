@@ -9,12 +9,7 @@
             overflow-x: auto;  /* Enable horizontal scrolling */
         }
 
-        #chartContainerUser1 {
-            height: 300px; 
-            width: 2000px; /* Adjust width to enable scrolling */
-        }
-
-        #chartContainerUser2 {
+        .chart-container-user {
             height: 300px; 
             width: 2000px; /* Adjust width to enable scrolling */
         }
@@ -85,7 +80,7 @@
     <h1>User Activity</h1>
     <div class="chart-container">
         {% for activity in activities %}
-            <div id="chartContainer{{activity.user}}" ></div>
+            <div class="chart-container-user" id="chartContainer{{activity.user}}" ></div>
         {% endfor %}
     </div>
 </body>
