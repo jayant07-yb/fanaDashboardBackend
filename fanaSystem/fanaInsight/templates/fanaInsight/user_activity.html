@@ -8,14 +8,22 @@
             width: 100%;
             overflow-x: auto;  /* Enable horizontal scrolling */
         }
-        #chartContainer {
+
+        #chartContainerUser1 {
             height: 300px; 
             width: 2000px; /* Adjust width to enable scrolling */
         }
+
+        #chartContainerUser2 {
+            height: 300px; 
+            width: 2000px; /* Adjust width to enable scrolling */
+        }
+
+        
     </style>
+        
     <script type="text/javascript">
-        window.onload = function () {
-            var data = JSON.parse('{{ activities|escapejs }}');
+        function my_fun(chartId, data) {
             var dataPoints = data.map(function(d) {
                 return { x: new Date(d.timestamp), y: d.is_active };
             });
@@ -33,7 +41,7 @@
                 dataPoints.push({ x: bufferedEndTimestamp, y: lastValue });
             }
 
-            var chart = new CanvasJS.Chart("chartContainer", {
+            var chart = new CanvasJS.Chart(chartId, {
                 title: {
                     text: "User Activity"
                 },
@@ -62,12 +70,23 @@
 
             chart.render();
         }
+
+        window.onload = function() {
+            {% for activity in activities %}
+            my_fun("chartContainer{{activity.user}}", JSON.parse('{{ activity.timeseries|escapejs }}'));
+            {% endfor %}
+        }
+
+
     </script>
+
 </head>
 <body>
     <h1>User Activity</h1>
     <div class="chart-container">
-        <div id="chartContainer"></div>
+        {% for activity in activities %}
+            <div id="chartContainer{{activity.user}}" ></div>
+        {% endfor %}
     </div>
 </body>
 </html>

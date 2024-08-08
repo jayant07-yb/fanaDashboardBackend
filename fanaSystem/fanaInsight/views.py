@@ -21,4 +21,4 @@ def user_activity_view(request):
         'is_active': 1 if activity.is_active else 0
     } for activity in activities]
     print("User activity data: ", data)
-    return render(request, 'fanaInsight/user_activity.html', {'activities': json.dumps(data)})
+    return render(request, 'fanaInsight/user_activity.html', {'activities': [{"timeseries" : json.dumps(data), "user": "User1"}, {"timeseries" : json.dumps(data), "user": "User2"}]})
