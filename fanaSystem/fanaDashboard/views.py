@@ -7,7 +7,6 @@ from fanaCallSetup.models import FanaCallRequest
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from fanaCallSetup.models import FanaCallRequest
-from fanaInsight.models import TableActivity, UserActivity
 from django.http import JsonResponse
 from django.utils import timezone
 import json
@@ -59,30 +58,7 @@ def handle_fana_call(request):
             is_active = any(state == '1' for state in combined_state)
             user = User.objects.get(id=user_id) if user_id else None
 
-            TableActivity.objects.create(
-                table_id=table_id,
-                is_active=is_active,
-                user=user,
-                timestamp=timezone.now()
-            )
-
-            if user:
-                UserActivity.objects.create(
-                    user=user,
-                    is_active=is_active,
-                    table=TableActivity.objects.filter(table_id=table_id).last(),
-                    timestamp=timezone.now()
-                )
-
-            # Set user as inactive if the table becomes inactive
-            if not is_active and user:
-                UserActivity.objects.create(
-                    user=user,
-                    is_active=False,
-                    table=None,
-                    timestamp=timezone.now()
-                )
-
+            print("TODO:: MODIFY THE REQUEST::Got details: {is_active}, {user}")
             return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
         else:
             return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
@@ -111,12 +87,6 @@ def dashboard_view(request):
         request_to_handle.save()
         data_changed = True
 
-        UserActivity.objects.create(
-            user=request.user,
-            is_active=True,
-            table=TableActivity.objects.filter(table_id=table_id).last(),
-            timestamp=timezone.now()
-        )
 
         return redirect('fanaDashboard')
 
