@@ -14,11 +14,46 @@
             width: 2000px; /* Adjust width to enable scrolling */
         }
 
-        
+        /* Modal styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            padding-top: 60px; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
         
     <script type="text/javascript">
-        function my_fun(chartId, data) {
+        function my_fun(chartId, data, userDetails) {
             var dataPoints = data.map(function(d) {
                 return { x: new Date(d.timestamp), y: d.is_active };
             });
@@ -64,24 +99,90 @@
             });
 
             chart.render();
+
+            // Add click event listener
+            chart.container.onclick = function() {
+                showModal(userDetails);
+            };
+        }
+
+        function showModal(userDetails) {
+            var modal = document.getElementById("myModal");
+            var modalContent = document.getElementById("modal-content");
+            modalContent.innerHTML = `
+                <span class="close">&times;</span>
+                <h2>User Details</h2>
+                <p><strong>Username:</strong> ${userDetails.username}</p>
+                <p><strong>Max Active Time:</strong> ${userDetails.maxActiveTime} minutes</p>
+                <p><strong>Average Active Time:</strong> ${userDetails.averageActiveTime} minutes</p>
+                <p><strong>Number of Servers:</strong> ${userDetails.numServers}</p>
+                <h3>Activity Graph</h3>
+                <div id="modalChartContainer" style="height: 300px; width: 100%;"></div>
+            `;
+            
+            var dataPoints = userDetails.activity.map(function(d) {
+                return { x: new Date(d.timestamp), y: d.is_active };
+            });
+
+            var modalChart = new CanvasJS.Chart("modalChartContainer", {
+                axisX: {
+                    title: "Timeline",
+                    gridThickness: 2,
+                    valueFormatString: "DD MMM YYYY HH:mm:ss"
+                },
+                axisY: {
+                    title: "Activity",
+                    interval: 1,
+                    labelFormatter: function(e) {
+                        return e.value === 1 ? "Active" : "Inactive";
+                    }
+                },
+                data: [
+                    {        
+                        type: "stepArea",
+                        color: "red",
+                        fillOpacity: 0.2,
+                        lineThickness: 2,
+                        dataPoints: dataPoints
+                    }
+                ]
+            });
+
+            modalChart.render();
+            modal.style.display = "block";
+
+            var span = document.getElementsByClassName("close")[0];
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
         }
 
         window.onload = function() {
             {% for activity in activities %}
-            my_fun("chartContainer{{activity.user}}", JSON.parse('{{ activity.timeseries|escapejs }}'));
+            my_fun("chartContainer{{activity.user}}", JSON.parse('{{ activity.timeseries|escapejs }}'), {
+                username: '{{ activity.user }}',
+                maxActiveTime: '{{ activity.maxActiveTime }}',
+                averageActiveTime: '{{ activity.averageActiveTime }}',
+                numServers: '{{ activity.numServers }}',
+                activity: JSON.parse('{{ activity.timeseries|escapejs }}')
+            });
             {% endfor %}
         }
-
-
     </script>
-
 </head>
 <body>
     <h1>User Activity</h1>
     <div class="chart-container">
         {% for activity in activities %}
-            <div class="chart-container-user" id="chartContainer{{activity.user}}" ></div>
+            <div class="chart-container-user" id="chartContainer{{activity.user}}"></div>
         {% endfor %}
+    </div>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content" id="modal-content">
+            <!-- Modal content will be injected here -->
+        </div>
     </div>
 </body>
 </html>

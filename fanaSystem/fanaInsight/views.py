@@ -28,6 +28,29 @@ def user_activity_view(request):
             'timestamp': activity.timestamp.isoformat(),
             'is_active': 1 if activity.is_active else 0
         } for activity in activities]
-        user_activities.append({"timeseries": json.dumps(data), "user": user.username})
+        
+        # Calculate additional details
+        max_active_time = calculate_max_active_time(activities)
+        average_active_time = calculate_average_active_time(activities)
+        num_servers = calculate_num_servers(activities)
+        
+        user_activities.append({
+            "timeseries": json.dumps(data),
+            "user": user.username,
+            "maxActiveTime": max_active_time,
+            "averageActiveTime": average_active_time,
+            "numServers": num_servers
+        })
     return render(request, 'fanaInsight/user_activity.html', {'activities': user_activities})
 
+def calculate_max_active_time(activities):
+    # Implement logic to calculate max active time
+    return 1
+
+def calculate_average_active_time(activities):
+    # Implement logic to calculate average active time
+    return 2
+
+def calculate_num_servers(activities):
+    # Implement logic to calculate number of servers
+    return 3

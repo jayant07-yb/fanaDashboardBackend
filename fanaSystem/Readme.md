@@ -14,7 +14,7 @@ python manage.py startapp fanaMonitoring
 ```
 
 URLS
-- http://127.0.0.1:8000/fanaCall/setup/
+- http://127.0.0.1:8000/fanaCall/
 - http://127.0.0.1:8000/fanaDashboard/
 
 

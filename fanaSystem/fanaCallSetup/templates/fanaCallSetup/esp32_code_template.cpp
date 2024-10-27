@@ -53,18 +53,23 @@ void sendCombinedRequest(const char* combinedState) {
 
 void setup() {
     Serial.begin(9600);
-    delay(10);
+    // Serial.setTimeout(2000);
+
+    // // Wait for serial to initialize.
+    // while(!Serial.available()) { }
+
+    // // Deep sleep mode until RESET pin is connected to a LOW signal (for example pushbutton or magnetic reed switch)
+    // Serial.println("I'm awake, but I'm going into deep sleep mode until RESET pin is connected to a LOW signal");
 
     pinMode(D1, INPUT_PULLUP);
     pinMode(D2, INPUT_PULLUP);
     pinMode(D3, INPUT_PULLUP);
     pinMode(D4, INPUT_PULLUP);
-
+    pinMode(D6, OUTPUT);
     // No need to attach interrupt, ESP8266 will wake up from deep sleep automatically on reset
     connectToWiFi();
-}
 
-void loop() {
+    
     // Create a combined state string
     char combinedState[5];
     combinedState[0] = digitalRead(D1) == LOW ? '1' : '0';
@@ -78,5 +83,8 @@ void loop() {
 
     // Enter deep sleep mode
     ESP.deepSleep(0); // Sleep forever, wakes up on external wakeup
+}
+
+void loop() {
     delay(200);  // Ensure the sleep mode is entered
 }
