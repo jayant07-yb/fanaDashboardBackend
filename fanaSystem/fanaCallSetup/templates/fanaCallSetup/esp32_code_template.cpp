@@ -1,9 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include <EEPROM.h>  // To use non-volatile memory for storing state
-extern "C" {
-  #include "user_interface.h"
-}
+#include <EEPROM.h>
 
 // Constants
 const char* ssid = "{wifi_name}";
@@ -25,23 +22,20 @@ WiFiClient wifiClient;
 State getLatestState() {
     EEPROM.begin(512);
 
-    // Read the stored state from EEPROM
     int storedState = EEPROM.read(0);
     
-    // Check if the state is set to "NO STATE SET"
     if (storedState == NO_STATE_SET) {
-        storedState = NOT_CALLING;  // Initialize to "NOT CALLING"
-        EEPROM.write(0, storedState);  // Save the initialized state
+        storedState = NOT_CALLING;
+        EEPROM.write(0, storedState);
         EEPROM.commit();
     } else {
-        // Toggle between "CALLING" and "NOT CALLING" on each restart
         storedState = (storedState == NOT_CALLING) ? CALLING : NOT_CALLING;
-        EEPROM.write(0, storedState);  // Save the toggled state
+        EEPROM.write(0, storedState);
         EEPROM.commit();
     }
-    
+
     EEPROM.end();
-    return static_cast<State>(storedState);  // Return the state as enum type
+    return static_cast<State>(storedState);
 }
 
 void connectToWiFi() {
@@ -53,49 +47,56 @@ void connectToWiFi() {
         Serial.print(".");
     }
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("Connected to WiFi");
+        Serial.println("\nConnected to WiFi");
     } else {
-        Serial.println("Failed to connect to WiFi");
+        Serial.println("\nFailed to connect to WiFi");
     }
 }
 
-void sendStateRequest(State state) {
+void sendStateRequest(State state, unsigned long timeTaken) {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
-        http.begin(wifiClient, serverUrl);
+        Serial.println("Attempting to send HTTP POST request...");
+        http.begin(wifiClient, serverUrl);  // Now using the wifiClient object
 
         http.addHeader("Content-Type", "application/json");
 
         String stateString = (state == CALLING) ? "calling" : "not calling";
-        String payload = "{\"combined_state\": \"" + stateString + "\", \"table_id\": \"" + String(table_id) + "\"}";
-        Serial.println(payload);
+        String payload = "{\"table_id\": \"" + String(table_id) + "\", \"state\": \"" + stateString + "\", \"time_taken\": " + String(timeTaken) + "}";
+        Serial.println("Payload: " + payload);
 
         int httpResponseCode = http.POST(payload);
 
         if (httpResponseCode > 0) {
-            String response = http.getString();
+            Serial.print("HTTP Response code: ");
             Serial.println(httpResponseCode);
+            String response = http.getString();
+            Serial.println("Response from server:");
             Serial.println(response);
         } else {
-            Serial.println("Error on sending POST");
+            Serial.print("Error on sending POST: ");
+            Serial.println(httpResponseCode);
         }
         http.end();
+    } else {
+        Serial.println("WiFi not connected, cannot send POST request.");
     }
 }
 
 void setup() {
     Serial.begin(9600);
+    Serial.println("Starting ESP8266");
 
-    // Get the latest state, initializing to "NOT CALLING" if "NO STATE SET"
+    unsigned long startTime = millis();  // Record start time
     State currentState = getLatestState();
 
     connectToWiFi();
-    sendStateRequest(currentState);  // Send the request with the current state
+    unsigned long timeTaken = millis() - startTime;  // Calculate time taken to connect and send
+    sendStateRequest(currentState, timeTaken);  // Send the request with time taken
 
-    // Enter deep sleep mode
-    ESP.deepSleep(0);  // Sleep indefinitely, wakes up on external wakeup
+    ESP.deepSleep(0);  // Enter deep sleep until external wake-up
 }
 
 void loop() {
-    delay(200);  // Ensure sleep mode is entered
+    delay(200);
 }

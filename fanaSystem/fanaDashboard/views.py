@@ -1,15 +1,17 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from fanaCallSetup.models import FanaCallRequest
-from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from fanaCallSetup.models import FanaCallRequest
 from django.http import JsonResponse
-from django.utils import timezone
 import json
+import logging
+
+# Configure logging to output to a file
+logging.basicConfig(filename='table_activity.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+
 
 global data_changed
 data_changed = False
@@ -29,12 +31,18 @@ def login_view(request):
 def handle_fana_call(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        combined_state = data.get('combined_state')
         table_id = data.get('table_id')
+        state = data.get('state')
+        time_taken = data.get('time_taken')
 
-        if combined_state and table_id:
-            # Log the table_id and state without storing in the database
-            print(f"Received request: Table ID = {table_id}, State = {combined_state}")
+        if table_id and state and time_taken is not None:
+            # Format the log entry
+            log_message = f"Table ID: {table_id}, State: {state}, Time Taken: {time_taken} ms"
+            print(log_message)
+            
+            # Log the event to a file and print to console
+            logging.info(log_message)
+
             return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
         else:
             return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
