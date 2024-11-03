@@ -1,27 +1,91 @@
-<!-- templates/dashboard.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Calls Dashboard</title>
+    <style>
+        /* Basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f0ff;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #5f4b8b;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        /* Container for table cards */
+        #tableList {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Styling for individual table cards */
+        .table-entry {
+            background-color: #fff;
+            border: 1px solid #e0d4ff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(95, 75, 139, 0.1);
+            padding: 15px;
+            transition: transform 0.2s;
+        }
+        .table-entry:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(95, 75, 139, 0.2);
+        }
+        
+        /* Table entry content */
+        .table-entry strong {
+            color: #5f4b8b;
+        }
+        .table-entry .time {
+            color: #8b6fae;
+            font-size: 0.9em;
+        }
+
+    </style>
 </head>
 <body>
     <h1>Smart Calls Dashboard</h1>
-    <div id="dashboard"></div>
+    <div id="tableList"></div>
 
     <script>
-        // Establish WebSocket connection to the Django Channels backend
+        // Establish WebSocket connection to the Django backend
         const socket = new WebSocket('ws://' + window.location.host + '/ws/dashboard/');
 
-        // Listen for messages
+        // Reference to the table list container
+        const tableList = document.getElementById("tableList");
+
+        // Handle incoming messages
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            const dashboard = document.getElementById("dashboard");
-            const newEntry = document.createElement("div");
-            newEntry.innerHTML = `<strong>Table ID:</strong> ${data.table_id}, <strong>State:</strong> ${data.state}`;
-            dashboard.appendChild(newEntry);
+            
+            // Check if the state is "calling"
+            if (data.state === "calling") {
+                const currentTime = new Date().toLocaleString();
+
+                // Create a new table entry element
+                const tableEntry = document.createElement("div");
+                tableEntry.className = "table-entry";
+                tableEntry.innerHTML = `
+                    <strong>Table ID:</strong> ${data.table_id}<br>
+                    <span class="time"><strong>Time Received:</strong> ${currentTime}</span>
+                `;
+
+                // Add the entry to the top of the list
+                tableList.prepend(tableEntry);
+            }
         };
 
         // Handle WebSocket errors
@@ -29,7 +93,7 @@
             console.error("WebSocket error:", error);
         };
 
-        // Close WebSocket connection
+        // Handle WebSocket closure
         socket.onclose = function() {
             console.log("WebSocket connection closed");
         };
