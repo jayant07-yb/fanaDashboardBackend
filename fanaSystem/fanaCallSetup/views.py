@@ -22,6 +22,8 @@ def get_server_ip():
     return ip_address
 
 def generate_esp32_code(wifi_name, wifi_password, table_id):
+    # TODO: Add a auth tocken also
+    #
     server_ip = get_server_ip()
     server_url = f"http://{server_ip}:8000/fanaDashboard/handleFanaCall/"
     template_path = os.path.join(os.path.dirname(__file__), 'templates', 'fanaCallSetup', 'esp32_code_template.cpp')

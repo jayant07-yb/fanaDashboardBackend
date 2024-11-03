@@ -14,23 +14,12 @@ import json
 global data_changed
 data_changed = False
 
-def signup_view(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('fanaDashboard')
-    else:
-        form = UserCreationForm()
-    return render(request, 'fanaDashboard/signup.html', {'form': form})
-
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
-            user = form.get_user()
-            login(request, user)
+            # user = form.get_user()
+            # # login(request, user)
             return redirect('fanaDashboard')
     else:
         form = AuthenticationForm()
@@ -65,6 +54,8 @@ def handle_fana_call(request):
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
+# TODO use jwt tocken to login 
+#
 @csrf_exempt
 @login_required
 def dashboard_view(request):

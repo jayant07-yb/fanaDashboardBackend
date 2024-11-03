@@ -23,6 +23,8 @@ urlpatterns = [
     path('', views.dashboard_view, name='fanaDashboard'),
     path('handleFanaCall/', views.handle_fana_call, name='handleFanaCall'),
     path('login/', views.login_view, name='login'),
-    path('signup/', views.signup_view, name='signup'),
+    # We can't signup from local device
+    # path('signup/', views.signup_view, name='signup'),
+    #
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 ]
