@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "fanaDashboard",
     "fanaCallSetup",
     "channels",
+    "fanaAuthenticator",
 ]
 
 ASGI_APPLICATION = 'fanaSystem.asgi.application'
@@ -149,3 +150,15 @@ CHANNEL_LAYERS = {
     },
 }
 
+from datetime import timedelta
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),  # Customize the token lifetime as needed
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
