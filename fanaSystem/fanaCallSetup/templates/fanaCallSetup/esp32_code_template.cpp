@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <EEPROM.h>  // To use non-volatile memory for storing state
 extern "C" {
   #include "user_interface.h"
 }
@@ -10,14 +11,44 @@ const char* password = "{wifi_password}";
 const char* serverUrl = "{server_url}";
 const char* table_id = "{table_id}";
 
+// Define states using enum
+enum State {
+    NO_STATE_SET = -1,
+    NOT_CALLING = 0,
+    CALLING = 1
+};
+
 // Create a WiFiClient object
 WiFiClient wifiClient;
+
+// Function to get the latest state or initialize it if not set
+State getLatestState() {
+    EEPROM.begin(512);
+
+    // Read the stored state from EEPROM
+    int storedState = EEPROM.read(0);
+    
+    // Check if the state is set to "NO STATE SET"
+    if (storedState == NO_STATE_SET) {
+        storedState = NOT_CALLING;  // Initialize to "NOT CALLING"
+        EEPROM.write(0, storedState);  // Save the initialized state
+        EEPROM.commit();
+    } else {
+        // Toggle between "CALLING" and "NOT CALLING" on each restart
+        storedState = (storedState == NOT_CALLING) ? CALLING : NOT_CALLING;
+        EEPROM.write(0, storedState);  // Save the toggled state
+        EEPROM.commit();
+    }
+    
+    EEPROM.end();
+    return static_cast<State>(storedState);  // Return the state as enum type
+}
 
 void connectToWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     unsigned long startTime = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - startTime) < 10000) { // Increase timeout to 10 seconds
+    while (WiFi.status() != WL_CONNECTED && (millis() - startTime) < 10000) { // 10-second timeout
         delay(500);
         Serial.print(".");
     }
@@ -28,14 +59,15 @@ void connectToWiFi() {
     }
 }
 
-void sendCombinedRequest(const char* combinedState) {
+void sendStateRequest(State state) {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
         http.begin(wifiClient, serverUrl);
 
         http.addHeader("Content-Type", "application/json");
 
-        String payload = "{\"combined_state\": \"" + String(combinedState) + "\", \"table_id\": \"" + String(table_id) + "\"}";
+        String stateString = (state == CALLING) ? "calling" : "not calling";
+        String payload = "{\"combined_state\": \"" + stateString + "\", \"table_id\": \"" + String(table_id) + "\"}";
         Serial.println(payload);
 
         int httpResponseCode = http.POST(payload);
@@ -53,38 +85,17 @@ void sendCombinedRequest(const char* combinedState) {
 
 void setup() {
     Serial.begin(9600);
-    // Serial.setTimeout(2000);
 
-    // // Wait for serial to initialize.
-    // while(!Serial.available()) { }
+    // Get the latest state, initializing to "NOT CALLING" if "NO STATE SET"
+    State currentState = getLatestState();
 
-    // // Deep sleep mode until RESET pin is connected to a LOW signal (for example pushbutton or magnetic reed switch)
-    // Serial.println("I'm awake, but I'm going into deep sleep mode until RESET pin is connected to a LOW signal");
-
-    pinMode(D1, INPUT_PULLUP);
-    pinMode(D2, INPUT_PULLUP);
-    pinMode(D3, INPUT_PULLUP);
-    pinMode(D4, INPUT_PULLUP);
-    pinMode(D6, OUTPUT);
-    // No need to attach interrupt, ESP8266 will wake up from deep sleep automatically on reset
     connectToWiFi();
-
-    
-    // Create a combined state string
-    char combinedState[5];
-    combinedState[0] = digitalRead(D1) == LOW ? '1' : '0';
-    combinedState[1] = digitalRead(D2) == LOW ? '1' : '0';
-    combinedState[2] = digitalRead(D3) == LOW ? '1' : '0';
-    combinedState[3] = digitalRead(D4) == LOW ? '1' : '0';
-    combinedState[4] = '\0'; // Null-terminate the string
-
-    // Send the combined state
-    sendCombinedRequest(combinedState);
+    sendStateRequest(currentState);  // Send the request with the current state
 
     // Enter deep sleep mode
-    ESP.deepSleep(0); // Sleep forever, wakes up on external wakeup
+    ESP.deepSleep(0);  // Sleep indefinitely, wakes up on external wakeup
 }
 
 void loop() {
-    delay(200);  // Ensure the sleep mode is entered
+    delay(200);  // Ensure sleep mode is entered
 }

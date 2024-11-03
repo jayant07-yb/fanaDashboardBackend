@@ -31,23 +31,10 @@ def handle_fana_call(request):
         data = json.loads(request.body)
         combined_state = data.get('combined_state')
         table_id = data.get('table_id')
-        user_id = data.get('user_id')  # Assuming user_id is passed in the request
 
         if combined_state and table_id:
-            table_request, created = FanaCallRequest.objects.get_or_create(table_id=table_id)
-
-            table_request.call_waiter_state = 'pressed' if combined_state[0] == '1' else 'released'
-            table_request.bring_bill_state = 'pressed' if combined_state[1] == '1' else 'released'
-            table_request.order_state = 'pressed' if combined_state[2] == '1' else 'released'
-            table_request.bring_water_state = 'pressed' if combined_state[3] == '1' else 'released'
-
-            table_request.timestamp = timezone.now()
-            table_request.save()
-
-            is_active = any(state == '1' for state in combined_state)
-            user = User.objects.get(id=user_id) if user_id else None
-
-            print("TODO:: MODIFY THE REQUEST::Got details: {is_active}, {user}")
+            # Log the table_id and state without storing in the database
+            print(f"Received request: Table ID = {table_id}, State = {combined_state}")
             return JsonResponse({'status': 'success', 'message': 'Request logged successfully'})
         else:
             return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
