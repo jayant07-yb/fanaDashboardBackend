@@ -18,11 +18,12 @@ class CustomTokenObtainPairView(APIView):
             refresh["app"] = app  # Add custom claim for app
 
             return Response({
+                'status': 'success',
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             })
         else:
-            return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"status": "error", "detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 def validate_credentials(username, password):
     # Simple string comparison for credential validation (replace with actual logic)

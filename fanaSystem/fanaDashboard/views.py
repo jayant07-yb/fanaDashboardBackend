@@ -42,3 +42,15 @@ def handle_fana_call(request):
 def dashboard(request):
     """Render the dashboard page."""
     return render(request, 'dashboard.html')
+
+
+def login_view(request):
+    # Set app_id in the session if it’s not already there
+    if "app_id" not in request.session:
+        request.session["app_id"] = "YOUR_APP_ID"  # Replace "YOUR_APP_ID" with the actual App ID or dynamic logic
+
+    # Retrieve app_id from session
+    app_id = request.session.get("app_id")
+
+    # Render the login form with the app_id context
+    return render(request, 'login.html', {"app_id": app_id})

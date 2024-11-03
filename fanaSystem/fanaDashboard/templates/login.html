@@ -1,0 +1,75 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login to Dashboard</title>
+    <link rel="stylesheet" href="{% static 'fanaDashboard/css/login.css' %}">
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login to Access Dashboard</h2>
+        <form id="loginForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required><br>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required><br>
+
+            <!-- App ID field is pre-filled and read-only -->
+            <label for="app_id">App ID:</label>
+            <input type="text" id="app_id" name="app_id" value="{{ app_id }}" readonly><br>
+
+            <button type="button" onclick="handleLogin()">Login</button>
+        </form>
+        <p id="error-message" style="color: red;"></p>
+    </div>
+    <script>
+        function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const appId = document.getElementById('app_id').value;
+    
+            fetch("http://localhost:8000/fanaAuthenticator/api/token/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password,
+                    app_id: appId
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Invalid credentials');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(data);  // Debugging statement to check what data contains
+    
+                if (data.status === "success") {
+                    // Store the JWT token in sessionStorage or localStorage
+                    sessionStorage.setItem('jwt_token', data.token);
+    
+                    // Redirect to the dashboard using the pre-defined URL
+                    window.location.href =  "{% url 'dashboard' %}";
+                } else {
+                    document.getElementById('error-message').textContent = data.message || "Invalid credentials";
+                }
+            })
+            .catch(error => {
+                console.error("Error during login:", error);
+                document.getElementById('error-message').textContent = error.message;
+            });
+        }
+    </script>
+    
+
+</body>
+</html>
