@@ -1,0 +1,38 @@
+<!-- templates/dashboard.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Calls Dashboard</title>
+</head>
+<body>
+    <h1>Smart Calls Dashboard</h1>
+    <div id="dashboard"></div>
+
+    <script>
+        // Establish WebSocket connection to the Django Channels backend
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/dashboard/');
+
+        // Listen for messages
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const dashboard = document.getElementById("dashboard");
+            const newEntry = document.createElement("div");
+            newEntry.innerHTML = `<strong>Table ID:</strong> ${data.table_id}, <strong>State:</strong> ${data.state}`;
+            dashboard.appendChild(newEntry);
+        };
+
+        // Handle WebSocket errors
+        socket.onerror = function(error) {
+            console.error("WebSocket error:", error);
+        };
+
+        // Close WebSocket connection
+        socket.onclose = function() {
+            console.log("WebSocket connection closed");
+        };
+    </script>
+</body>
+</html>

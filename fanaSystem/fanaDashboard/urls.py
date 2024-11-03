@@ -15,9 +15,12 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 # fanaDashboard/urls.py
+
 from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('dashboard/', views.dashboard, name='dashboard'),
     path('handleFanaCall/', views.handle_fana_call, name='handleFanaCall'),
 ]
+

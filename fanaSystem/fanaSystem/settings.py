@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "fanaDashboard",
     "fanaCallSetup",
+    "channels",
 ]
 
 ASGI_APPLICATION = 'fanaSystem.asgi.application'
@@ -139,3 +140,12 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # fanaSystem/settings.py
 LOGIN_URL = '/fanaDashboard/login/'
 LOGIN_REDIRECT_URL = '/fanaDashboard/'
+
+# settings.py
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
