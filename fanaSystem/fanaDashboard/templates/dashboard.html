@@ -67,24 +67,42 @@
         // Reference to the table list container
         const tableList = document.getElementById("tableList");
 
+        // Map to store table IDs and their associated div elements
+        const tableMap = {};
+
         // Handle incoming messages
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            
-            // Check if the state is "calling"
-            if (data.state === "calling") {
-                const currentTime = new Date().toLocaleString();
+            const tableId = data.table_id;
+            const state = data.state;
+            const currentTime = new Date().toLocaleString();
 
-                // Create a new table entry element
-                const tableEntry = document.createElement("div");
-                tableEntry.className = "table-entry";
-                tableEntry.innerHTML = `
-                    <strong>Table ID:</strong> ${data.table_id}<br>
-                    <span class="time"><strong>Time Received:</strong> ${currentTime}</span>
-                `;
+            // If state is "calling", add or update the card
+            if (state === "calling") {
+                if (!tableMap[tableId]) {
+                    // Create a new table entry element
+                    const tableEntry = document.createElement("div");
+                    tableEntry.className = "table-entry";
+                    tableEntry.id = `table-${tableId}`;
+                    tableEntry.innerHTML = `
+                        <strong>Table ID:</strong> ${tableId}<br>
+                        <span class="time"><strong>Time Received:</strong> ${currentTime}</span>
+                    `;
 
-                // Add the entry to the top of the list
-                tableList.prepend(tableEntry);
+                    // Add the entry to the map and to the list
+                    tableMap[tableId] = tableEntry;
+                    tableList.prepend(tableEntry);
+                } else {
+                    // Update the time if the card already exists
+                    const existingEntry = tableMap[tableId];
+                    existingEntry.querySelector(".time").innerHTML = `<strong>Time Received:</strong> ${currentTime}`;
+                }
+            }
+            // If state is "not calling", remove the card if it exists
+            else if (state === "not calling" && tableMap[tableId]) {
+                const tableEntry = tableMap[tableId];
+                tableList.removeChild(tableEntry);  // Remove the div from the DOM
+                delete tableMap[tableId];           // Remove the entry from the map
             }
         };
 
