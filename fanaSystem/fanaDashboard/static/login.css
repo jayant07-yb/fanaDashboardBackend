@@ -1,0 +1,75 @@
+/* Center the container and style with a shadow */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f3f0ff;
+    font-family: Arial, sans-serif;
+    color: #333;
+}
+
+.login-container {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 30px 40px;
+    width: 80%;
+    max-width: 300px;
+    max-height: 80%;
+    text-align: center;
+}
+
+h2 {
+    color: #5f4b8b;
+    font-size: 1.8em;
+    margin-bottom: 20px;
+}
+
+/* Input and label styling */
+label {
+    display: block;
+    text-align: left;
+    font-weight: bold;
+    color: #5f4b8b;
+    margin: 10px 0 5px;
+}
+
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 1em;
+}
+
+/* Button styling */
+button {
+    width: 100%;
+    padding: 12px;
+    font-size: 1em;
+    color: #fff;
+    background-color: #5f4b8b;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #4e3c6e;
+}
+
+/* Error message styling */
+#error-message {
+    color: red;
+    margin-top: 15px;
+}
+
+/* Hide the App ID input */
+#app_id {
+    display: none;
+}

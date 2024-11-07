@@ -6,26 +6,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login to Dashboard</title>
-    <link rel="stylesheet" href="{% static 'fanaDashboard/css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'login.css' %}">
+
 </head>
 <body>
     <div class="login-container">
-        <h2>Login to Access Dashboard</h2>
+        <h2>Login</h2>
         <form id="loginForm">
             <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required><br>
+            <input type="text" id="username" name="username" required>
 
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required><br>
+            <input type="password" id="password" name="password" required>
 
-            <!-- App ID field is pre-filled and read-only -->
-            <label for="app_id">App ID:</label>
-            <input type="text" id="app_id" name="app_id" value="{{ app_id }}" readonly><br>
+            <!-- Hidden App ID field -->
+            <input type="text" id="app_id" name="app_id" value="{{ app_id }}" readonly style="display: none;">
 
             <button type="button" onclick="handleLogin()">Login</button>
         </form>
-        <p id="error-message" style="color: red;"></p>
+        <p id="error-message"></p>
     </div>
+
     <script>
         function handleLogin() {
             const username = document.getElementById('username').value;
@@ -51,25 +52,17 @@
                 return response.json();
             })
             .then(data => {
-                console.log(data);  // Debugging statement to check what data contains
-    
                 if (data.status === "success") {
-                    // Store the JWT token in sessionStorage or localStorage
                     sessionStorage.setItem('jwt_token', data.token);
-    
-                    // Redirect to the dashboard using the pre-defined URL
-                    window.location.href =  "{% url 'dashboard' %}";
+                    window.location.href = "{% url 'dashboard' %}";
                 } else {
                     document.getElementById('error-message').textContent = data.message || "Invalid credentials";
                 }
             })
             .catch(error => {
-                console.error("Error during login:", error);
                 document.getElementById('error-message').textContent = error.message;
             });
         }
     </script>
-    
-
 </body>
 </html>
