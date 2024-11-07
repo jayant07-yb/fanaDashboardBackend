@@ -11,15 +11,101 @@
             background-color: #f3f0ff;
             color: #333;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             margin: 0;
-            padding: 20px;
         }
+
         h1 {
             color: #5f4b8b;
             font-size: 2em;
             margin-bottom: 20px;
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            width: 200px;
+            background-color: #333;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: width 0.3s;
+            overflow: hidden;        /* Prevents scrolling */
+            position: fixed;         /* Fixes the sidebar to the viewport */
+
+        }
+
+        .sidebar.minimized {
+            width: 30px;  /* Adjust to fit icon size */
+            align-items: center;
+        }
+
+        .sidebar h2 {
+            color: lavender;
+            margin: 0 0 10px 0;
+            font-size: 1.5em;
+        }
+
+        .sidebar p {
+            margin: 10px 0;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            width: 100%;
+        }
+
+        .sidebar ul li {
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .sidebar ul li button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1em;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            align-self: flex-end;
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-content {
+            visibility: visible;
+            height: 100%;
+        }
+
+        .sidebar-content.minimized {
+            visibility: hidden;
+        }
+
+        .logout-button {
+            width: 70px;
+            height: 30px;
+            position: fixed;
+            bottom: 10%;
+            align-self: center;
+            
+        }
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            margin-left: 500px;      /* Adjust to leave space for the sidebar */
+
         }
 
         /* Container for table cards */
@@ -40,47 +126,69 @@
             padding: 15px;
             transition: transform 0.2s;
         }
+
         .table-entry:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 16px rgba(95, 75, 139, 0.2);
         }
-        
+
         /* Table entry content */
         .table-entry strong {
             color: #5f4b8b;
         }
+
         .table-entry .time {
             color: #8b6fae;
             font-size: 0.9em;
         }
-
     </style>
 </head>
 <body>
-    <h1>Smart Calls Dashboard</h1>
-    <div id="tableList"></div>
+    <div class="sidebar" id="sidebar">
+        <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+
+        <div id = "sidebar-content" class = "sidebar-content">
+            <h2>My Profile</h2>
+            <p>Username: {{ username }}</p>
+            <p>Grp No: <span id="grp-no">XYZ</span></p>
+            <button onclick="handleLogout()" class="logout-button">Logout</button>
+        </div>
+    </div>
+
+    <div class="main-content" id="main-content">
+        <h1>Smart Calls Dashboard</h1>
+        <div id="tableList"></div>
+    </div>
 
     <script>
-        // Establish WebSocket connection to the Django backend
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const sidebarContent = document.getElementById("sidebar-content");
+            const mainContent = document.getElementById("main-content");
+            sidebar.classList.toggle("minimized");
+            sidebarContent.classList.toggle("minimized");
+        }
+
+        // Logout function
+        function handleLogout() {
+            sessionStorage.removeItem('jwt_token');
+            window.location.href = "{% url 'login_view' %}";
+        }
+
+        // WebSocket connection
         const socket = new WebSocket('ws://' + window.location.host + '/ws/dashboard/');
-
-        // Reference to the table list container
         const tableList = document.getElementById("tableList");
-
-        // Map to store table IDs and their associated div elements
         const tableMap = {};
 
-        // Handle incoming messages
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
             const tableId = data.table_id;
             const state = data.state;
             const currentTime = new Date().toLocaleString();
 
-            // If state is "calling", add or update the card
             if (state === "calling") {
                 if (!tableMap[tableId]) {
-                    // Create a new table entry element
                     const tableEntry = document.createElement("div");
                     tableEntry.className = "table-entry";
                     tableEntry.id = `table-${tableId}`;
@@ -88,30 +196,23 @@
                         <strong>Table ID:</strong> ${tableId}<br>
                         <span class="time"><strong>Time Received:</strong> ${currentTime}</span>
                     `;
-
-                    // Add the entry to the map and to the list
                     tableMap[tableId] = tableEntry;
                     tableList.prepend(tableEntry);
                 } else {
-                    // Update the time if the card already exists
                     const existingEntry = tableMap[tableId];
                     existingEntry.querySelector(".time").innerHTML = `<strong>Time Received:</strong> ${currentTime}`;
                 }
-            }
-            // If state is "not calling", remove the card if it exists
-            else if (state === "not calling" && tableMap[tableId]) {
+            } else if (state === "not calling" && tableMap[tableId]) {
                 const tableEntry = tableMap[tableId];
-                tableList.removeChild(tableEntry);  // Remove the div from the DOM
-                delete tableMap[tableId];           // Remove the entry from the map
+                tableList.removeChild(tableEntry);
+                delete tableMap[tableId];
             }
         };
 
-        // Handle WebSocket errors
         socket.onerror = function(error) {
             console.error("WebSocket error:", error);
         };
 
-        // Handle WebSocket closure
         socket.onclose = function() {
             console.log("WebSocket connection closed");
         };
