@@ -14,14 +14,8 @@ class CustomTokenObtainPairView(APIView):
             print("Credentials validated successfully.")
 
             # Generate JWT token with an additional claim for the app
-            refresh = RefreshToken()
-            refresh["app"] = app  # Add custom claim for app
+            return Response(generate_tokens(username=username, app=app))
 
-            return Response({
-                'status': 'success',
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            })
         else:
             return Response({"status": "error", "detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -81,3 +75,18 @@ class RemoveDeviceView(APIView):
         save_registered_device_ids(device_ids)
         return Response({"status": "success", "message": "Device ID removed successfully"}, status=status.HTTP_200_OK)
 
+from rest_framework_simplejwt.tokens import RefreshToken
+
+def generate_tokens(username, app):
+    # Create a refresh token and add a custom claim
+    refresh = RefreshToken()
+    refresh["app"] = app
+    refresh["username"] = username
+    print("Generated Refresh Token:", str(refresh))
+    print("Generated Access Token:", str(refresh.access_token))
+
+    return {
+        'status': 'success',
+        'refresh': str(refresh),
+        'access': str(refresh.access_token)
+    }

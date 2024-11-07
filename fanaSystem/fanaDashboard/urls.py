@@ -23,5 +23,6 @@ urlpatterns = [
     path('login/', views.login_view, name='login_view'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('handleFanaCall/', views.handle_fana_call, name='handleFanaCall'),
+    path('setSession/', views.set_session, name='set_session'),
 ]
 
