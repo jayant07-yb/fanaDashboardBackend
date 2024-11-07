@@ -1,39 +1,147 @@
+
+
+/* Basic styling */
 body {
+    font-family: Arial, sans-serif;
+    background-color: #f3f0ff;
+    color: #333;
     display: flex;
     margin: 0;
 }
 
+h1 {
+    color: #5f4b8b;
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+/* Sidebar styling */
 .sidebar {
     width: 200px;
     background-color: #333;
     color: white;
     height: 100vh;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: width 0.3s;
+    overflow: hidden;        /* Prevents scrolling */
+    position: fixed;         /* Fixes the sidebar to the viewport */
+
+}
+
+.sidebar.minimized {
+    width: 30px;  /* Adjust to fit icon size */
+    align-items: center;
 }
 
 .sidebar h2 {
     color: lavender;
-    margin-top: 0;
+    margin: 0 0 10px 0;
+    font-size: 1.5em;
+}
+
+.sidebar p {
+    margin: 10px 0;
 }
 
 .sidebar ul {
     list-style-type: none;
     padding: 0;
+    width: 100%;
 }
 
 .sidebar ul li {
     margin: 20px 0;
+    width: 100%;
 }
 
 .sidebar ul li button {
     background: none;
     border: none;
     color: white;
+    font-size: 1em;
+    width: 100%;
+    text-align: left;
     cursor: pointer;
 }
 
+.toggle-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    align-self: flex-end;
+    margin-bottom: 20px;
+}
+
+.sidebar-content {
+    visibility: visible;
+    height: 100%;
+}
+
+.sidebar-content.minimized {
+    visibility: hidden;
+}
+
+.logout-button {
+    width: 70px;
+    height: 30px;
+    position: fixed;
+    bottom: 10%;
+    align-self: center;
+    
+}
+
+/* Main content area */
 .main-content {
-    flex: 1;
+    margin-left: 250px;  /* Starts next to expanded sidebar */
     padding: 20px;
+    transition: margin-left 0.3s;
+    width: calc(100% - 200px); /* Adjusts width according to sidebar */
+}
+
+/* Adjust main content margin when sidebar is minimized */
+.main-content.expanded {
+    margin-left: 60px;     /* Starts next to minimized sidebar */
+    width: calc(100% - 60px);  /* Adjusts width for minimized sidebar */
+}
+
+
+
+/* Container for table cards */
+#tableList {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    width: 100%;
+    max-width: 1200px;
+}
+
+/* Styling for individual table cards */
+.table-entry {
+    background-color: #fff;
+    border: 1px solid #e0d4ff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(95, 75, 139, 0.1);
+    padding: 15px;
+    transition: transform 0.2s;
+}
+
+.table-entry:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(95, 75, 139, 0.2);
+}
+
+/* Table entry content */
+.table-entry strong {
+    color: #5f4b8b;
+}
+
+.table-entry .time {
+    color: #8b6fae;
+    font-size: 0.9em;
 }
