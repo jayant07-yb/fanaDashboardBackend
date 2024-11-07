@@ -2,10 +2,10 @@
 #include <ESP8266HTTPClient.h>
 #include <EEPROM.h>
 
-const char* ssid = "comp";
-const char* password = "P90962u$";
-const char* serverUrl = "http://192.168.1.12:8000/fanaDashboard/handleFanaCall/";
-const char* table_id = "11";
+const char* ssid = "{wifi_name}";
+const char* password = "{wifi_password}";
+const char* serverUrl = "{server_url}";
+const char* table_id = "{table_id}";
 
 enum State {
     NO_STATE_SET = -1,

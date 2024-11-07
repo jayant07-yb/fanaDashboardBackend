@@ -26,7 +26,7 @@ def generate_esp32_code(wifi_name, wifi_password, table_id):
     #
     server_ip = get_server_ip()
     server_url = f"http://{server_ip}:8000/fanaDashboard/handleFanaCall/"
-    template_path = os.path.join(os.path.dirname(__file__), 'templates', 'fanaCallSetup', 'esp32_code_template.cpp')
+    template_path = os.path.join(os.path.dirname(__file__), 'templates', 'fanaCallSetup', 'tmp_non_reset_pin_code.cpp')
     with open(template_path, 'r') as template_file:
         code = template_file.read()
     code = code.replace('{wifi_name}', wifi_name)
