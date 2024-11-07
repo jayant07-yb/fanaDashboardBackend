@@ -5,7 +5,7 @@
 // Constants
 const char* ssid = "comp";
 const char* password = "P90962u$";
-const char* serverUrl = "http://192.168.1.5:8000/fanaDashboard/handleFanaCall/";
+const char* serverUrl = "http://192.168.1.12:8000/fanaDashboard/handleFanaCall/";
 const char* table_id = "11";
 
 // Define states using enum
