@@ -21,9 +21,20 @@
 
     <div class="main-content" id="main-content">
         <h1>Smart Calls Dashboard</h1>
-        <div id="tableList"></div>
+        
+        <!-- Filter Dropdown -->
+        <!-- <label for="filterSelect">Filter: </label>
+        <select id="filterSelect" onchange="filterContent()">
+            <option value="all">All</option>
+            <option value="table_state">Table State</option>
+            <option value="order_update">Order Updates</option>
+        </select> -->
+        
+        <h2>Table State</h2>
+        <div id="tableList" class="entry-list"></div>
+
         <h2>Orders</h2>
-        <div id="orderList"></div> <!-- Section for orders -->
+        <div id="orderList" class="entry-list"></div>
     </div>
 
     <script>
@@ -53,6 +64,7 @@
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
             const messageType = data.message_type;
+
             if (messageType === "table_state") {
                 // Handle table state updates
                 const tableId = data.table_id;
@@ -63,8 +75,9 @@
                 if (state === "calling") {
                     if (!tableMap[tableId]) {
                         const tableEntry = document.createElement("div");
-                        tableEntry.className = "table-entry";
+                        tableEntry.className = "dashboard-event-entry";  // Apply card style
                         tableEntry.id = `table-${tableId}`;
+                        tableEntry.setAttribute("data-type", "table_state");
                         tableEntry.innerHTML = `
                             <strong>Table ID:</strong> ${tableId}<br>
                             <span class="time"><strong>Time Received:</strong> ${currentTime}</span><br>
@@ -88,12 +101,13 @@
 
                 if (!orderMap[orderId]) {
                     const orderEntry = document.createElement("div");
-                    orderEntry.className = "order-entry";
+                    orderEntry.className = "dashboard-event-entry";  // Apply card style
                     orderEntry.id = `order-${orderId}`;
+                    orderEntry.setAttribute("data-type", "order_update");
                     orderEntry.innerHTML = `
                         <strong>Order ID:</strong> ${orderId}<br>
                         <strong>Details:</strong> ${orderDetails}<br>
-                        <button onclick="deleteOrder('${orderId}')">Delete</button>
+                        <button onclick="deleteOrder('${orderId}')">Done</button>
                     `;
                     orderMap[orderId] = orderEntry;
                     orderList.prepend(orderEntry);
@@ -117,6 +131,22 @@
                 orderList.removeChild(orderEntry);
                 delete orderMap[orderId];
             }
+        }
+
+        // Function to filter content based on dropdown selection
+        function filterContent() {
+            const filterValue = document.getElementById("filterSelect").value;
+            const entries = document.querySelectorAll(".entry");
+
+            entries.forEach(entry => {
+                if (filterValue === "all") {
+                    entry.style.display = "block"; // Show all entries
+                } else if (entry.getAttribute("data-type") === filterValue) {
+                    entry.style.display = "block"; // Show matching entries
+                } else {
+                    entry.style.display = "none";  // Hide non-matching entries
+                }
+            });
         }
     </script>
 </body>

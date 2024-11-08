@@ -14,6 +14,11 @@ order_data = {
     "order_details": "Product XYZ, Quantity: 2"
 }
 
+order_data2 = {
+    "order_id": "123456",
+    "order_details": "Product XYZ, Quantity: 2"
+}
+
 # Function to simulate the customer placing an order on fanaAuthenticator
 def send_order_to_fana_authenticator(order_data):
     try:
@@ -37,10 +42,12 @@ def forward_order_to_fana_dashboard(order_data):
 # Main function to test the end-to-end flow
 def test_order_flow():
     # Step 1: Send order to fanaAuthenticator
-    #send_order_to_fana_authenticator(order_data)
+    # send_order_to_fana_authenticator(order_data)
     
     # Step 2: Forward the order directly to fanaDashboard (for testing purposes)
+    # 
     forward_order_to_fana_dashboard(order_data)
+    forward_order_to_fana_dashboard(order_data2)
 
 if __name__ == "__main__":
     test_order_flow()

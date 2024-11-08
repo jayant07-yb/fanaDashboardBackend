@@ -106,7 +106,7 @@ h1 {
 
 /* Adjust main content margin when sidebar is minimized */
 .main-content.expanded {
-    margin-left: 60px;     /* Starts next to minimized sidebar */
+    margin-left: 70px;     /* Starts next to minimized sidebar */
     width: calc(100% - 60px);  /* Adjusts width for minimized sidebar */
 }
 
@@ -121,27 +121,56 @@ h1 {
     max-width: 1200px;
 }
 
-/* Styling for individual table cards */
-.table-entry {
+/* Container for entries, using grid layout */
+.entry-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    width: 100%;
+    max-width: 1200px;
+    margin-top: 20px;
+}
+
+/* Styling for individual cards */
+.dashboard-event-entry {
     background-color: #fff;
     border: 1px solid #e0d4ff;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(95, 75, 139, 0.1);
-    padding: 15px;
+    padding: 40px;
+    margin: 10px;
     transition: transform 0.2s;
+    position: relative; /* Allows absolute positioning for the button */
 }
 
-.table-entry:hover {
+.dashboard-event-entry:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(95, 75, 139, 0.2);
 }
 
-/* Table entry content */
-.table-entry strong {
+/* Consistent font styling within the card */
+.dashboard-event-entry strong {
     color: #5f4b8b;
 }
 
-.table-entry .time {
+.dashboard-event-entry .time {
     color: #8b6fae;
     font-size: 0.9em;
+}
+
+/* Styling for the Done button, positioned at top-left */
+.dashboard-event-entry button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 5px 10px;
+    background-color: #604b8ac0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.dashboard-event-entry button:hover {
+    background-color: #53208de6;
 }
