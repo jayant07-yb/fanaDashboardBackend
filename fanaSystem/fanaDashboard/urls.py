@@ -24,5 +24,6 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('handleFanaCall/', views.handle_fana_call, name='handleFanaCall'),
     path('setSession/', views.set_session, name='set_session'),
+    path('receiveOrder/', views.receive_order, name='receive_order')
 ]
 

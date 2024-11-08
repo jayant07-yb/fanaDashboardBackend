@@ -11,7 +11,7 @@
     <div class="sidebar" id="sidebar">
         <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
 
-        <div id = "sidebar-content" class = "sidebar-content">
+        <div id="sidebar-content" class="sidebar-content">
             <h2>My Profile</h2>
             <p>Username: {{ username }}</p>
             <p>Grp No: <span id="grp-no">XYZ</span></p>
@@ -22,6 +22,8 @@
     <div class="main-content" id="main-content">
         <h1>Smart Calls Dashboard</h1>
         <div id="tableList"></div>
+        <h2>Orders</h2>
+        <div id="orderList"></div> <!-- Section for orders -->
     </div>
 
     <script>
@@ -41,39 +43,65 @@
             window.location.href = "{% url 'login_view' %}";
         }
 
-        // WebSocket connection
+        // WebSocket connection for receiving messages
         const socket = new WebSocket('ws://' + window.location.host + '/ws/dashboard/');
         const tableList = document.getElementById("tableList");
+        const orderList = document.getElementById("orderList");
         const tableMap = {};
+        const orderMap = {};
 
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            const tableId = data.table_id;
-            const state = data.state;
-            const currentTime = new Date().toLocaleString();
+            const messageType = data.message_type;
+            if (messageType === "table_state") {
+                // Handle table state updates
+                const tableId = data.table_id;
+                const state = data.state;
+                const timeTaken = data.time_taken;
+                const currentTime = new Date().toLocaleString();
 
-            if (state === "calling") {
-                if (!tableMap[tableId]) {
-                    const tableEntry = document.createElement("div");
-                    tableEntry.className = "table-entry";
-                    tableEntry.id = `table-${tableId}`;
-                    tableEntry.innerHTML = `
-                        <strong>Table ID:</strong> ${tableId}<br>
-                        <span class="time"><strong>Time Received:</strong> ${currentTime}</span>
-                    `;
-                    tableMap[tableId] = tableEntry;
-                    tableList.prepend(tableEntry);
-                } else {
-                    const existingEntry = tableMap[tableId];
-                    existingEntry.querySelector(".time").innerHTML = `<strong>Time Received:</strong> ${currentTime}`;
+                if (state === "calling") {
+                    if (!tableMap[tableId]) {
+                        const tableEntry = document.createElement("div");
+                        tableEntry.className = "table-entry";
+                        tableEntry.id = `table-${tableId}`;
+                        tableEntry.innerHTML = `
+                            <strong>Table ID:</strong> ${tableId}<br>
+                            <span class="time"><strong>Time Received:</strong> ${currentTime}</span><br>
+                            <span class="time"><strong>Time Taken:</strong> ${timeTaken} ms</span>
+                        `;
+                        tableMap[tableId] = tableEntry;
+                        tableList.prepend(tableEntry);
+                    } else {
+                        const existingEntry = tableMap[tableId];
+                        existingEntry.querySelector(".time").innerHTML = `<strong>Time Received:</strong> ${currentTime}`;
+                    }
+                } else if (state === "not calling" && tableMap[tableId]) {
+                    const tableEntry = tableMap[tableId];
+                    tableList.removeChild(tableEntry);
+                    delete tableMap[tableId];
                 }
-            } else if (state === "not calling" && tableMap[tableId]) {
-                const tableEntry = tableMap[tableId];
-                tableList.removeChild(tableEntry);
-                delete tableMap[tableId];
+            } else if (messageType === "order_update") {
+                // Handle order updates
+                const orderId = data.order_id;
+                const orderDetails = data.order_details;
+
+                if (!orderMap[orderId]) {
+                    const orderEntry = document.createElement("div");
+                    orderEntry.className = "order-entry";
+                    orderEntry.id = `order-${orderId}`;
+                    orderEntry.innerHTML = `
+                        <strong>Order ID:</strong> ${orderId}<br>
+                        <strong>Details:</strong> ${orderDetails}<br>
+                        <button onclick="deleteOrder('${orderId}')">Delete</button>
+                    `;
+                    orderMap[orderId] = orderEntry;
+                    orderList.prepend(orderEntry);
+                }
             }
         };
 
+        // Handle WebSocket errors
         socket.onerror = function(error) {
             console.error("WebSocket error:", error);
         };
@@ -81,6 +109,15 @@
         socket.onclose = function() {
             console.log("WebSocket connection closed");
         };
+
+        // Function to delete an order entry
+        function deleteOrder(orderId) {
+            const orderEntry = document.getElementById(`order-${orderId}`);
+            if (orderEntry) {
+                orderList.removeChild(orderEntry);
+                delete orderMap[orderId];
+            }
+        }
     </script>
 </body>
 </html>

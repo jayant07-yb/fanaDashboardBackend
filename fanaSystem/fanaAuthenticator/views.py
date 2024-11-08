@@ -90,3 +90,33 @@ def generate_tokens(username, app):
         'refresh': str(refresh),
         'access': str(refresh.access_token)
     }
+
+
+import requests
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+import os
+from django.conf import settings
+
+# Assume `FANA_DASHBOARD_URL` is an environment variable pointing to the POST endpoint on fanaDashboard
+FANA_DASHBOARD_URL = settings.SEND_ORDER_TO_DASHBOARD_URL
+
+
+@csrf_exempt
+def handle_customer_order(request):
+    """Receive customer order and forward it to fanaDashboard."""
+    if request.method == 'POST':
+        order_data = json.loads(request.body)
+        
+        try:
+            # Forward the order data to fanaDashboard
+            response = requests.post(FANA_DASHBOARD_URL, json=order_data)
+            response.raise_for_status()  # Check for HTTP errors
+            
+            # Send success response if the forward was successful
+            return JsonResponse({'status': 'success', 'message': 'Order forwarded to fanaDashboard'})
+        except requests.RequestException as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)

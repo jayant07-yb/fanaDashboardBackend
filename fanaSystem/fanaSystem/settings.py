@@ -23,6 +23,8 @@ AUTH_SERVER_IP = os.getenv("AUTH_SERVER_IP", DEFAULT_SERVER_HOST)
 # Construct the full URL for the authentication endpoint
 AUTH_SERVER_LOGIN_URL = f"http://localhost:8000/fanaAuthenticator/api/token/"
 
+SEND_ORDER_TO_DASHBOARD_URL = f"http://localhost:8000/fanaDashboard/receiveOrder/"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

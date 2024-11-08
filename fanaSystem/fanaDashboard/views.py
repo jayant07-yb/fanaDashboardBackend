@@ -29,6 +29,7 @@ def handle_fana_call(request):
                 "dashboard_group",  # Group name that the consumer listens to
                 {
                     "type": "broadcast_message",
+                    "message_type": "table_state",
                     "table_id": table_id,
                     "state": state
                 }
@@ -89,3 +90,42 @@ def set_session(request):
             return JsonResponse({'status': 'error', 'message': 'Invalid token'}, status=400)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+import json
+import logging
+
+logging.basicConfig(filename='table_activity.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+
+@csrf_exempt
+def receive_order(request):
+    """Receive order data from fanaAuthenticator and broadcast via WebSocket."""
+    if request.method == 'POST':
+        order_data = json.loads(request.body)
+        order_id = order_data.get("order_id")
+        order_details = order_data.get("order_details")
+
+        # Log the received order
+        log_message = f"Received order: {order_id} - Details: {order_details}"
+        logging.info(log_message)
+
+        # Broadcast order to WebSocket clients
+        channel_layer = get_channel_layer()
+        print(f"Received the order details {order_id}, {order_details}")
+        async_to_sync(channel_layer.group_send)(
+            "dashboard_group",  # Group name that WebSocket clients listen to
+            {
+                "type": "broadcast_message",
+                "message_type": "order_update",
+                "order_id": order_id,
+                "order_details": order_details,
+            }
+        )
+
+        return JsonResponse({'status': 'success', 'message': 'Order broadcasted to WebSocket clients'})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
