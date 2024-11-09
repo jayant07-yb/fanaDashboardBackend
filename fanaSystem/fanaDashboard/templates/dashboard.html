@@ -31,10 +31,10 @@
         </select> -->
         
         <h2>Table State</h2>
-        <div id="tableList" class="entry-list"></div>
+        <div id="tableList" ></div>
 
         <h2>Orders</h2>
-        <div id="orderList" class="entry-list"></div>
+        <div id="orderList" ></div>
     </div>
 
     <script>
@@ -101,17 +101,73 @@
 
                 if (!orderMap[orderId]) {
                     const orderEntry = document.createElement("div");
-                    orderEntry.className = "dashboard-event-entry";  // Apply card style
+                    orderEntry.className = "dashboard-event-entry"; // Apply card style
                     orderEntry.id = `order-${orderId}`;
                     orderEntry.setAttribute("data-type", "order_update");
-                    orderEntry.innerHTML = `
+
+                    // Parse order_details if it's a string
+                    let parsedOrderDetails;
+                    try {
+                        parsedOrderDetails = typeof orderDetails === "string" ? JSON.parse(orderDetails) : orderDetails;
+                    } catch (error) {
+                        console.error("Failed to parse order_details:", error);
+                        return; // Exit if parsing fails
+                    }
+
+                    // Extract items and totalAmount from parsedOrderDetails
+                    const { items, totalAmount } = parsedOrderDetails;
+
+                    // Render each item in order_details
+                    let orderItemsHtml = "";
+
+                    if (Array.isArray(items)) {
+                        orderItemsHtml += `
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+                            <thead>
+                                <tr>
+                                <th style="border: 1px solid #ddd; padding: 8px;">#</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Name</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Cost</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Quantity</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        `;
+
+                        items.forEach((item, index) => {
+                            orderItemsHtml += `
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.name}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">₹${item.cost}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.quantity}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">₹${item.itemTotal}</td>
+                            </tr>
+                            `;
+                        });
+
+                        orderItemsHtml += `
+                            </tbody>
+                            </table>
+                        `;
+                        } else {
+                        console.warn("Expected items to be an array, but it is not.");
+                        }
+
+                        orderEntry.innerHTML = `
                         <strong>Order ID:</strong> ${orderId}<br>
-                        <strong>Details:</strong> ${orderDetails}<br>
+                        <strong>Details:</strong><br> ${orderItemsHtml}
+                        <strong>Total Amount:</strong> ₹${totalAmount}<br>
                         <button onclick="deleteOrder('${orderId}')">Done</button>
-                    `;
-                    orderMap[orderId] = orderEntry;
-                    orderList.prepend(orderEntry);
-                }
+                        `;
+
+                        orderMap[orderId] = orderEntry;
+                        orderList.prepend(orderEntry);
+
+                    }
+
+
             }
         };
 
