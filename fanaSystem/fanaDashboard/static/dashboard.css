@@ -112,53 +112,57 @@ h1 {
 
 
 
-/* Container for table cards */
-#tableList {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    width: 100%;
-    max-width: 1200px;
-}
-
 /* Container for entries, using grid layout */
 .entry-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-    width: 100%;
-    max-width: 1200px;
-    margin-top: 20px;
+    gap: 20px;
+    padding: 20px;
+}
+            
+/* Responsive grid: 2 columns for large screens */
+@media (min-width: 768px) {
+    .entry-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-/* Styling for individual cards */
+/* Responsive grid: 2 columns for medium screens */
+@media  (max-width: 767px) {
+    .entry-list {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
+/* Card styling */
 .dashboard-event-entry {
     background-color: #fff;
     border: 1px solid #e0d4ff;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(95, 75, 139, 0.1);
-    padding: 40px;
+    padding: 20px; /* Reduced padding to fit content better */
     margin: 10px;
     transition: transform 0.2s;
-    position: relative; /* Allows absolute positioning for the button */
+    position: relative;
+    overflow-x: auto; /* Adds horizontal scroll if content overflows */
+    width: 600px;
 }
 
-.dashboard-event-entry:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(95, 75, 139, 0.2);
+/* Table cell styling */
+.dashboard-event-entry th,
+.dashboard-event-entry td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    word-wrap: break-word; /* Wraps text in cells */
+    box-sizing: border-box;
 }
 
-/* Consistent font styling within the card */
-.dashboard-event-entry strong {
-    color: #5f4b8b;
+/* Ensures table header cells don't overflow */
+.dashboard-event-entry th {
+    white-space: nowrap;
 }
 
-.dashboard-event-entry .time {
-    color: #8b6fae;
-    font-size: 0.9em;
-}
-
-/* Styling for the Done button, positioned at top-left */
+/* Button styling for Done button */
 .dashboard-event-entry button {
     position: absolute;
     top: 5px;
@@ -169,8 +173,10 @@ h1 {
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    box-sizing: border-box;
 }
 
 .dashboard-event-entry button:hover {
     background-color: #53208de6;
 }
+
