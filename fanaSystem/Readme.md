@@ -31,3 +31,8 @@ WHERE id NOT IN (
     GROUP BY table_id
 );
 ```
+
+
+To make the twilio run : 
+
+Add a .env file in the fana authenticator folder with sid and auth token
