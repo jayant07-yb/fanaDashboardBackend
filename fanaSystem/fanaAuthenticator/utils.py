@@ -11,7 +11,7 @@ def generate_otp(length = 6):
     try:
         return ''.join([str(random.randint(0, 9)) for _ in range(length)])
     except Exception as e:
-        generic_error_handler(e)
+        raise e
 
 def send_otp(phone_number , otp ,length = 6):
     try:
@@ -22,7 +22,5 @@ def send_otp(phone_number , otp ,length = 6):
             to=phone_number
         )
         return {"success" : True , "message" : "Otp Sent Successfully !"}
-    except TwilioRestException as e:
-        return generic_error_handler(e , "Twilio Error")
     except Exception as e:
-        return generic_error_handler(e)
+        raise e

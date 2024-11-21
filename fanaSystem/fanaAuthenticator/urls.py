@@ -1,7 +1,7 @@
 # fanaAuthenticator/urls.py
 
 from django.urls import path
-from .views import CustomTokenObtainPairView, VerifyOtp
+from .views import CustomTokenObtainPairView, VerifyOtp , ProtectedRouteCheck
 
 # urlpatterns = [
 #     path('api/token/', CustomTokenObtainPairView.as_view(), name='custom_token_obtain_pair'),
@@ -9,8 +9,11 @@ from .views import CustomTokenObtainPairView, VerifyOtp
 #     path('api/remove_device/', RemoveDeviceView.as_view(), name='remove_device'),
 #     path('handle_customer_order/', handle_customer_order, name='handle_customer_order')
 # ]
-urlpatterns = [
-    path('api/send-otp', CustomTokenObtainPairView.as_view(), name='custom_token_obtain_pair'),
-    path('api/verify-otp', VerifyOtp.as_view(), name='verify-otp'),
 
+app_name = 'fanaAuthenticator'
+
+urlpatterns = [
+    path('api/send-otp', CustomTokenObtainPairView.as_view(), name='sent-otp'),
+    path('api/verify-otp', VerifyOtp.as_view(), name='verify-otp'),
+    path('api/protected' , ProtectedRouteCheck.as_view() ,name="protected_route_check")  
 ]

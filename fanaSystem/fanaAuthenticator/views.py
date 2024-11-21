@@ -28,8 +28,8 @@ class VerifyOtp(APIView):
         try:
             user_otp = request.data.get("otp")
             phone_number = request.data.get("phone")
-            # actual_otp = cache.get(phone_number)
-            actual_otp = user_otp
+            actual_otp = cache.get(phone_number)
+            # actual_otp = user_otp
             print(actual_otp , user_otp)
             if actual_otp == user_otp and user_otp != None:
                 payload = {
@@ -49,8 +49,12 @@ class VerifyOtp(APIView):
             if actual_otp is None or user_otp != actual_otp:
                 return Response({"success" : False , "message" : "Invalid or Expired OTP"})
         except Exception as e:
-            return JsonResponse(generic_error_handler(e))
-            
+            raise e
+
+
+class ProtectedRouteCheck(APIView):
+    def get(self , request , *args , **kwargs):
+        return JsonResponse({"message" : request.data.get("user_data") , "success" : True})
     
     
 # def validate_credentials(username, password):
