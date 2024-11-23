@@ -24,3 +24,4 @@ def send_otp(phone_number , otp ,length = 6):
         return {"success" : True , "message" : "Otp Sent Successfully !"}
     except Exception as e:
         raise e
+        

@@ -14,7 +14,7 @@
         <h2>Login</h2>
         <form id="loginForm">
             <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
+            <input type="text" id="username" name="phone" required>
 
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" required>
@@ -42,7 +42,7 @@ function handleLogin() {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ phone : username, password })
     })
     .then(response => response.json())
     .then(data => {
