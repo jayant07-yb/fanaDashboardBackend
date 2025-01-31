@@ -30,7 +30,7 @@ AUTH_SERVER_IP = os.getenv("AUTH_SERVER_IP", DEFAULT_SERVER_HOST)
 PUBLIC_IP = "internals.getfana.com"
 
 # Construct the full URL for the authentication endpoint
-BASE_URL = f"https://{PUBLIC_IP if PUBLIC_IP else 'localhost'}:8000"
+BASE_URL = f"https://{PUBLIC_IP if PUBLIC_IP else 'localhost:8000'}"
 AUTH_SERVER_LOGIN_URL = f"{BASE_URL}/fanaAuthenticator/api/token/"
 WSL_SERVER_URL = f"https://{PUBLIC_IP if PUBLIC_IP else 'localhost'}:{8001 if PUBLIC_IP else 8000}/ws/dashboard/"
 SEND_ORDER_TO_DASHBOARD_URL =  f"{BASE_URL}/fanaDashboard/receiveOrder/"
