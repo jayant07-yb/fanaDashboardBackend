@@ -71,6 +71,7 @@ INSTALLED_APPS = [
 ASGI_APPLICATION = 'fanaSystem.asgi.application'
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "fanaDashboard.middleware.JWTAuthenticationMiddleware",
@@ -79,7 +80,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
 ]
 SECURE_COOKIES = False  # Change to True in production
 
