@@ -51,36 +51,49 @@ function handleLogin() {
         if (data.status === "success" && data.access) {
             // Step 2: Send access token (JWT) to Django to set the session
             console.log("Access token received, calling set_session with:", data.access);  // Debugging line
+            save_mode = "cookie";
+            if (save_mode == 'session')
+            {
+                
+                fetch("{% url 'set_session' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({ jwt: data.access })  // Send the access token
+                })
+                .then(response => response.json())
+                .then(sessionData => {
+                    console.log("set_session response:", sessionData);  // Debugging line
+    
+                    if (sessionData.status === "success") {
+                        sessionStorage.setItem("jwt_token", data.access);
+    
+                            // Set JWT token in cookie with a 1-day expiration
+                        const expires = new Date();
+                        expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)); // 1 day
+                        document.cookie = `jwt_token=${data.access}; expires=${expires.toUTCString()}; path=/; Secure; SameSite=Strict`;
+    
+                        window.location.href = "{% url 'dashboard' %}";
+                    } else {
+                        document.getElementById('error-message').textContent = sessionData.message || "Failed to set session";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error during session setup:", error);
+                    document.getElementById('error-message').textContent = "Session setup failed. Please try again.";
+                });
+            } else {
+                sessionStorage.setItem("jwt_token", data.access);
+                // Set JWT token in cookie with a 1-day expiration
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)); // 1 day
+                document.cookie = `jwt_token=${data.access}; expires=${expires.toUTCString()}; path=/; Secure; SameSite=Strict`;
 
-            fetch("{% url 'set_session' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}"
-                },
-                body: JSON.stringify({ jwt: data.access })  // Send the access token
-            })
-            .then(response => response.json())
-            .then(sessionData => {
-                console.log("set_session response:", sessionData);  // Debugging line
+                window.location.href = "{% url 'dashboard' %}";
+            }
 
-                if (sessionData.status === "success") {
-                    sessionStorage.setItem("jwt_token", data.access);
-
-                        // Set JWT token in cookie with a 1-day expiration
-                    const expires = new Date();
-                    expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)); // 1 day
-                    document.cookie = `jwt_token=${token}; expires=${expires.toUTCString()}; path=/; Secure; SameSite=Strict`;
-
-                    window.location.href = "{% url 'dashboard' %}";
-                } else {
-                    document.getElementById('error-message').textContent = sessionData.message || "Failed to set session";
-                }
-            })
-            .catch(error => {
-                console.error("Error during session setup:", error);
-                document.getElementById('error-message').textContent = "Session setup failed. Please try again.";
-            });
         } else {
             document.getElementById('error-message').textContent = data.message || "Login failed";
         }
