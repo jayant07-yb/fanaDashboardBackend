@@ -5,8 +5,8 @@ import common as settings
 BASE_URL = f"{settings.BASE_URL}/fanaAuthenticator/api"
 
 # Set the URLs for fanaAuthenticator and fanaDashboard from environment variables
-FANA_AUTHENTICATOR_URL = os.getenv("FANA_AUTHENTICATOR_URL", "http://localhost:8000/fanaAuthenticator/handle_customer_order/")
-FANA_DASHBOARD_URL = os.getenv("FANA_DASHBOARD_URL", "http://localhost:8000/fanaDashboard/receiveOrder/")
+FANA_AUTHENTICATOR_URL = os.getenv("FANA_AUTHENTICATOR_URL", f"{settings.BASE_URL}/fanaAuthenticator/handle_customer_order/")
+FANA_DASHBOARD_URL = os.getenv("FANA_DASHBOARD_URL", f"{settings.BASE_URL}/fanaDashboard/receiveOrder/")
 
 # Sample order data to send
 order_data = {
