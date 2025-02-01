@@ -2,7 +2,7 @@ import json
 import requests
 import time
 import asyncio
-from threading import Thread, Event
+from threading import Event
 import common as settings
 import websockets
 
@@ -20,6 +20,7 @@ order_reflected = False
 fana_call_reflected = False
 ws = None
 stop_event = Event()
+ws_ready_event = Event()  # This event will be used to signal when the WebSocket is ready
 
 # Function to get JWT token
 def get_jwt_token():
@@ -46,21 +47,12 @@ async def connect_websocket(token):
         headers = {
             "Authorization": f"Bearer {token}"
         }
-        # Use 'additional_headers' to pass the headers
         async with websockets.connect(WS_URL, additional_headers=headers) as websocket:
             print(f"Connected to WebSocket at {WS_URL}")
+            ws = websocket
 
-            # Now you can send or receive messages via the websocket
-            # Example: Send a message
-            # message = {
-            #     "table_id": 1,
-            #     "state": "open",
-            #     "message_type": "order_state",
-            #     "order_id": 1234,
-            #     "order_details": "Sample order details",
-            #     "time_taken": 30
-            # }
-            # await websocket.send(json.dumps(message))
+            # Signal that the WebSocket is ready
+            ws_ready_event.set()
 
             # Listen for messages
             while True:
@@ -122,7 +114,13 @@ async def test_sequence():
     try:
         # Step 2: Connect to WebSocket asynchronously
         print("[INFO] Connecting to WebSocket...")
+        # The WebSocket connection will be established in the background
         asyncio.create_task(connect_websocket(access_token))
+
+        # Wait for the WebSocket to be ready before proceeding
+        print("[INFO] Waiting for WebSocket connection to be ready...")
+        await asyncio.wait_for(ws_ready_event.wait(), timeout=30)  # Wait for WebSocket to be ready or timeout after 30 seconds
+        print("[INFO] WebSocket is ready. Proceeding...")
 
         # Step 3: Send Order
         if not send_order():
