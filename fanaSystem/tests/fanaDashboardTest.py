@@ -1,9 +1,9 @@
 import json
 import requests
 import time
-import websockets
+from websocket import create_connection
+from threading import Thread, Event
 import common as settings
-
 BASE_URL = settings.BASE_URL
 WS_URL = settings.WSL_SERVER_URL
 
@@ -16,9 +16,11 @@ TABLE_ID = "table_1"
 access_token = None
 order_reflected = False
 fana_call_reflected = False
-ws = None
 
-# Function to get JWT token
+stop_event = Event()
+
+
+# Get JWT token
 def get_jwt_token():
     global access_token
     print("[INFO] Getting JWT token...")
@@ -36,31 +38,41 @@ def get_jwt_token():
         return None
 
 
-# Function to connect to WebSocket (Synchronous)
-def connect_websocket(token):
-    global ws
+# WebSocket Listener
+def websocket_listener(stop_event):
+    global order_reflected, fana_call_reflected, ws
     try:
-        headers = {
-            "Authorization": f"Bearer {token}"
-        }
+        print("[INFO] WebSocket connection established.")
+        while not stop_event.is_set():
+            try:
+                result = ws.recv()
+                if not result.strip():
+                    print("[INFO] Received an empty WebSocket message. Ignoring...")
+                    continue
 
-        # Debugging: Print the URL and headers being used
-        print(f"Connecting to WebSocket at {WS_URL} with headers {headers}")
+                print("[INFO] WebSocket event received:", result)
+                try:
+                    event = json.loads(result)
+                except json.JSONDecodeError as e:
+                    print(f"[ERROR] Failed to decode WebSocket message: {e}")
+                    continue
 
-        # Synchronously connect to the WebSocket
-        ws = websockets.connect(WS_URL, extra_headers=headers)
-        
-        # Wait for the connection to be established
-        connection = ws.__enter__()
+                if event.get("message_type") == "order_update" and event.get("order_id") == ORDER_ID:
+                    print("[INFO] Order reflected on dashboard.")
+                    order_reflected = True
 
-        print(f"Connected to WebSocket at {WS_URL}")
-        return connection
+                if event.get("message_type") == "table_state" and event.get("table_id") == TABLE_ID:
+                    print("[INFO] Fana call reflected on dashboard.")
+                    fana_call_reflected = True
+            except Exception as e:
+                print(f"[ERROR] Error receiving WebSocket event: {e}")
+                break
+    finally:
+        print("[INFO] WebSocket connection closing...")
+        ws.close()
 
-    except Exception as e:
-        print(f"[ERROR] Failed to connect to WebSocket: {e}")
-        return None
 
-# Send Order function
+# Send Order
 def send_order():
     global access_token
     print("[INFO] Sending order...")
@@ -81,7 +93,8 @@ def send_order():
     print("[INFO] Send Order Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
 
-# Handle Fana Call function
+
+# Handle Fana Call
 def handle_fana_call():
     global access_token
     print("[INFO] Sending fana call...")
@@ -93,9 +106,10 @@ def handle_fana_call():
     print("[INFO] Handle Fana Call Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
 
-# Main test function
+
+# Main Test Function
 def test_sequence():
-    global order_reflected, fana_call_reflected, ws
+    global order_reflected, fana_call_reflected, ws, stop_event
 
     # Step 1: Get JWT Token
     tokens = get_jwt_token()
@@ -105,43 +119,63 @@ def test_sequence():
         return
 
     try:
-        # Step 2: Connect to WebSocket synchronously
+        # Step 2: Connect to WebSocket
         print("[INFO] Connecting to WebSocket...")
-        connection = connect_websocket(access_token)
+        ws = create_connection(
+            WS_URL,
+            header=[f"Authorization: Bearer {access_token}"],
+        )
+        print("[INFO] Connected to WebSocket.")
 
-        if not connection:
-            print("[ERROR] Test failed: WebSocket connection not established.")
-            print("Result: FAILED")
-            return
+        # Step 3: Start WebSocket Listener in a separate thread
+        listener_thread = Thread(target=websocket_listener, args=(stop_event,))
+        listener_thread.start()
 
-        # Step 3: Send Order
+        # Step 4: Send Order
         if not send_order():
             print("[ERROR] Test failed: Order not sent successfully.")
+            stop_event.set()
+            listener_thread.join()
             print("Result: FAILED")
             return
 
         time.sleep(2)  # Allow some time for the dashboard to process
 
-        # Step 4: Send Fana Call
+        # Step 5: Send Fana Call
         if not handle_fana_call():
             print("[ERROR] Test failed: Fana call not sent successfully.")
+            stop_event.set()
+            listener_thread.join()
             print("Result: FAILED")
             return
 
         time.sleep(2)  # Allow some time for WebSocket events to be received
 
+        # Step 6: Validate WebSocket Events
+        print("[INFO] Verifying WebSocket events...")
+        if not order_reflected:
+            print("[ERROR] Order not reflected on dashboard.")
+        if not fana_call_reflected:
+            print("[ERROR] Fana call not reflected on dashboard.")
+
         # Final Test Result
-        print("Result: PASSED")
+        if order_reflected and fana_call_reflected:
+            print("Result: PASSED")
+        else:
+            print("Result: FAILED")
 
     except Exception as e:
         print(f"[ERROR] Test failed with exception: {e}")
         print("Result: FAILED")
     finally:
-        # Close the WebSocket connection
+        # Signal the WebSocket listener thread to stop
+        stop_event.set()
         if ws:
             ws.close()
-            print("[INFO] WebSocket connection closed.")
+        listener_thread.join()
+
 
 # Run the Test
 if __name__ == "__main__":
     test_sequence()
+
