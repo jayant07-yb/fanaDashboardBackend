@@ -1,9 +1,11 @@
 import json
 import requests
 import time
-from websocket import create_connection
+import asyncio
 from threading import Thread, Event
 import common as settings
+import websockets
+
 BASE_URL = settings.BASE_URL
 WS_URL = settings.WSL_SERVER_URL
 
@@ -16,11 +18,10 @@ TABLE_ID = "table_1"
 access_token = None
 order_reflected = False
 fana_call_reflected = False
-
+ws = None
 stop_event = Event()
 
-
-# Get JWT token
+# Function to get JWT token
 def get_jwt_token():
     global access_token
     print("[INFO] Getting JWT token...")
@@ -38,41 +39,43 @@ def get_jwt_token():
         return None
 
 
-# WebSocket Listener
-def websocket_listener(stop_event):
-    global order_reflected, fana_call_reflected, ws
+# Function to connect to WebSocket
+async def connect_websocket(token):
+    global ws
     try:
-        print("[INFO] WebSocket connection established.")
-        while not stop_event.is_set():
-            try:
-                result = ws.recv()
-                if not result.strip():
-                    print("[INFO] Received an empty WebSocket message. Ignoring...")
-                    continue
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+        # Use 'additional_headers' to pass the headers
+        async with websockets.connect(WS_URL, additional_headers=headers) as websocket:
+            print(f"Connected to WebSocket at {WS_URL}")
 
-                print("[INFO] WebSocket event received:", result)
+            # Now you can send or receive messages via the websocket
+            # Example: Send a message
+            # message = {
+            #     "table_id": 1,
+            #     "state": "open",
+            #     "message_type": "order_state",
+            #     "order_id": 1234,
+            #     "order_details": "Sample order details",
+            #     "time_taken": 30
+            # }
+            # await websocket.send(json.dumps(message))
+
+            # Listen for messages
+            while True:
                 try:
-                    event = json.loads(result)
-                except json.JSONDecodeError as e:
-                    print(f"[ERROR] Failed to decode WebSocket message: {e}")
-                    continue
+                    result = await websocket.recv()
+                    print(f"Received WebSocket message: {result}")
+                    # You can process the result as per your need
+                except websockets.exceptions.ConnectionClosed:
+                    print("[INFO] WebSocket connection closed.")
+                    break
 
-                if event.get("message_type") == "order_update" and event.get("order_id") == ORDER_ID:
-                    print("[INFO] Order reflected on dashboard.")
-                    order_reflected = True
+    except Exception as e:
+        print(f"[ERROR] Failed to connect to WebSocket: {e}")
 
-                if event.get("message_type") == "table_state" and event.get("table_id") == TABLE_ID:
-                    print("[INFO] Fana call reflected on dashboard.")
-                    fana_call_reflected = True
-            except Exception as e:
-                print(f"[ERROR] Error receiving WebSocket event: {e}")
-                break
-    finally:
-        print("[INFO] WebSocket connection closing...")
-        ws.close()
-
-
-# Send Order
+# Send Order function
 def send_order():
     global access_token
     print("[INFO] Sending order...")
@@ -93,8 +96,7 @@ def send_order():
     print("[INFO] Send Order Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
 
-
-# Handle Fana Call
+# Handle Fana Call function
 def handle_fana_call():
     global access_token
     print("[INFO] Sending fana call...")
@@ -106,9 +108,8 @@ def handle_fana_call():
     print("[INFO] Handle Fana Call Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
 
-
-# Main Test Function
-def test_sequence():
+# Main test function
+async def test_sequence():
     global order_reflected, fana_call_reflected, ws, stop_event
 
     # Step 1: Get JWT Token
@@ -119,39 +120,29 @@ def test_sequence():
         return
 
     try:
-        # Step 2: Connect to WebSocket
+        # Step 2: Connect to WebSocket asynchronously
         print("[INFO] Connecting to WebSocket...")
-        ws = create_connection(
-            WS_URL,
-            header=[f"Authorization: Bearer {access_token}"],
-        )
-        print("[INFO] Connected to WebSocket.")
+        asyncio.create_task(connect_websocket(access_token))
 
-        # Step 3: Start WebSocket Listener in a separate thread
-        listener_thread = Thread(target=websocket_listener, args=(stop_event,))
-        listener_thread.start()
-
-        # Step 4: Send Order
+        # Step 3: Send Order
         if not send_order():
             print("[ERROR] Test failed: Order not sent successfully.")
             stop_event.set()
-            listener_thread.join()
             print("Result: FAILED")
             return
 
         time.sleep(2)  # Allow some time for the dashboard to process
 
-        # Step 5: Send Fana Call
+        # Step 4: Send Fana Call
         if not handle_fana_call():
             print("[ERROR] Test failed: Fana call not sent successfully.")
             stop_event.set()
-            listener_thread.join()
             print("Result: FAILED")
             return
 
         time.sleep(2)  # Allow some time for WebSocket events to be received
 
-        # Step 6: Validate WebSocket Events
+        # Step 5: Validate WebSocket Events
         print("[INFO] Verifying WebSocket events...")
         if not order_reflected:
             print("[ERROR] Order not reflected on dashboard.")
@@ -168,14 +159,11 @@ def test_sequence():
         print(f"[ERROR] Test failed with exception: {e}")
         print("Result: FAILED")
     finally:
-        # Signal the WebSocket listener thread to stop
+        # Stop the WebSocket listener
         stop_event.set()
         if ws:
-            ws.close()
-        listener_thread.join()
-
+            await ws.close()
 
 # Run the Test
 if __name__ == "__main__":
-    test_sequence()
-
+    asyncio.run(test_sequence())
