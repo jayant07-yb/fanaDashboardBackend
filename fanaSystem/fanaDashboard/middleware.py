@@ -1,10 +1,15 @@
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import AccessToken
 from channels.middleware import BaseMiddleware
 from jwt import decode as jwt_decode, ExpiredSignatureError, InvalidTokenError
 from django.conf import settings
 from django.urls import resolve
+from channels.middleware import BaseMiddleware
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth import get_user_model
+from jwt import decode as jwt_decode, ExpiredSignatureError, InvalidTokenError
+from django.conf import settings
+
 
 class JWTAuthenticationMiddleware:
     """
@@ -64,13 +69,6 @@ class JWTAuthenticationMiddleware:
             return user
         return AnonymousUser()
 
-from channels.middleware import BaseMiddleware
-from django.contrib.auth.models import AnonymousUser
-from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.tokens import AccessToken
-from jwt import decode as jwt_decode, ExpiredSignatureError, InvalidTokenError
-from django.conf import settings
 
 
 class WebSocketJWTAuthenticationMiddleware(BaseMiddleware):
@@ -111,10 +109,15 @@ class WebSocketJWTAuthenticationMiddleware(BaseMiddleware):
         token = None
 
         # Check cookies
-        if b"cookie" in headers:
-            cookie_header = headers[b"cookie"].decode("utf-8")
-            cookies = {key: value for key, value in (pair.split('=') for pair in cookie_header.split('; '))}
-            token = cookies.get("jwt_token")
+        # if b"cookie" in headers:
+        #     cookie_header = headers[b"cookie"].decode("utf-8")
+        #     cookies = {key: value for key, value in (pair.split('=') for pair in cookie_header.split('; '))}
+        #     token = cookies.get("jwt_token")
+
+        if "sec-websocket-protocol" in self.scope:
+            auth_header = self.scope["sec-websocket-protocol"]
+            if auth_header.startswith("Bearer "):
+                token = auth_header.split("Bearer ")[-1]
 
         # Fallback to Authorization header
         if not token and b"authorization" in headers:

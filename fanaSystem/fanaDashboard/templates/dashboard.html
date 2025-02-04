@@ -61,7 +61,11 @@
         }
 
         // WebSocket connection for receiving messages
-        const socket = new WebSocket('{{ wsl_server_url }}');
+        const socket = new WebSocket('{{ wsl_server_url }}', [], {
+            headers: {
+                "Sec-WebSocket-Protocol": "Bearer " + jwtToken
+            }
+        });
         const tableList = document.getElementById("tableList");
         const orderList = document.getElementById("orderList");
         const tableMap = {};
