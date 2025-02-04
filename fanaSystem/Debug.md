@@ -1,11 +1,1 @@
-    <script type="text/javascript">
-        window.onload = function () {
-            var data = JSON.parse('[{\u0022timestamp\u0022: \u00222024\u002D08\u002D06T19:44:22.626524+00:00\u0022, \u0022is_active\u0022: 1}, {\u0022timestamp\u0022: \u00222024\u002D08\u002D06T21:19:08.310167+00:00\u0022, \u0022is_active\u0022: 1}, {\u0022timestamp\u0022: \u00222024\u002D08\u002D06T21:19:09.859455+00:00\u0022, \u0022is_active\u0022: 1}]');
-            var dataPoints = data.map(function(d) {
-                return { x: new Date(d.timestamp), y: d.is_active };
-            });
-
-            // Define
-
-
-            
+{'type': 'websocket', 'path': '/ws/dashboard/', 'raw_path': b'/ws/dashboard/', 'root_path': '', 'headers': [(b'upgrade', b'websocket'), (b'connection', b'upgrade'), (b'host', b'internals.getfana.com'), (b'x-real-ip', b'223.233.82.93'), (b'x-forwarded-for', b'223.233.82.93'), (b'x-forwarded-proto', b'https'), (b'pragma', b'no-cache'), (b'cache-control', b'no-cache'), (b'user-agent', b'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'), (b'origin', b'https://internals.getfana.com'), (b'sec-websocket-version', b'13'), (b'accept-encoding', b'gzip, deflate, br, zstd'), (b'accept-language', b'en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7'), (b'cookie', b'__gsas=ID=19ed6efe5bf165c1:T=1716826727:RT=1716826727:S=ALNI_Mav1pUHu8X0YUJzGxWSnTV9Oxn-4g; sessionid=2l9dim5933cnfdxqatqaeyrchqjxbl2w; csrftoken=fEpTQuI8kEMWoVEWBi7mQNJtiUfwtKC8; jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM4Njk0NzA5LCJpYXQiOjE3Mzg2OTQ0MDksImp0aSI6IjAzNTcyMGRkMDI1MTQxMzE4NzI4ZGQzMjMxMzc2YzdkIiwiYXBwIjpudWxsLCJ1c2VybmFtZSI6InZhbGlkX3VzZXJuYW1lIiwidXNlcl9pZCI6MX0.F1u1455sRHRCBaUcsw8rKtArrpimbGpGLu5OvferN9I'), (b'sec-websocket-key', b'MzjQlkp3i5OwN9jOTQ437g=='), (b'sec-websocket-extensions', b'permessage-deflate; client_max_window_bits')], 'query_string': b'', 'client': ['127.0.0.1', 59312], 'server': ['127.0.0.1', 8001], 'subprotocols': [], 'asgi': {'version': '3.0'}}

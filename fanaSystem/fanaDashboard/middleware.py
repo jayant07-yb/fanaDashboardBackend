@@ -109,15 +109,13 @@ class WebSocketJWTAuthenticationMiddleware(BaseMiddleware):
         token = None
 
         # Check cookies
-        # if b"cookie" in headers:
-        #     cookie_header = headers[b"cookie"].decode("utf-8")
-        #     cookies = {key: value for key, value in (pair.split('=') for pair in cookie_header.split('; '))}
-        #     token = cookies.get("jwt_token")
+        if b"cookie" in headers:
+            cookie_header = headers[b"cookie"].decode("utf-8")
+            # Assuming `cookie_header` is a string like 'jwt_token=your_jwt_token; other_cookie=value'
+            # Strip spaces and handle cookie parsing
+            token = next((split_pair[1] for pair in cookie_header.split(';') 
+                        if (split_pair := pair.strip().split('='))[0] == 'jwt_token'), None)
 
-        if b"sec-websocket-protocol" in headers:
-            auth_header = headers[b"sec-websocket-protocol"].decode("utf-8")
-            if auth_header.startswith("Bearer "):
-                token = auth_header.split("Bearer ")[-1]
 
         # Fallback to Authorization header
         if not token and b"authorization" in headers:
