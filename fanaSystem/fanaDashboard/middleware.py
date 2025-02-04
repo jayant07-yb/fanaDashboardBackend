@@ -114,8 +114,8 @@ class WebSocketJWTAuthenticationMiddleware(BaseMiddleware):
         #     cookies = {key: value for key, value in (pair.split('=') for pair in cookie_header.split('; '))}
         #     token = cookies.get("jwt_token")
 
-        if "sec-websocket-protocol" in self.scope:
-            auth_header = self.scope["sec-websocket-protocol"]
+        if b"sec-websocket-protocol" in headers:
+            auth_header = headers[b"sec-websocket-protocol"].decode("utf-8")
             if auth_header.startswith("Bearer "):
                 token = auth_header.split("Bearer ")[-1]
 
