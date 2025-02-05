@@ -107,7 +107,7 @@ class WebSocketJWTAuthenticationMiddleware(BaseMiddleware):
         """
         headers = dict(scope.get("headers", []))
         token = None
-
+        print("Value of header", headers)
         # Check cookies
         if b"cookie" in headers:
             cookie_header = headers[b"cookie"].decode("utf-8")
@@ -116,6 +116,7 @@ class WebSocketJWTAuthenticationMiddleware(BaseMiddleware):
             token = next((split_pair[1] for pair in cookie_header.split(';') 
                         if (split_pair := pair.strip().split('='))[0] == 'jwt_token'), None)
 
+            print("Setting tockent as", token)
 
         # Fallback to Authorization header
         if not token and b"authorization" in headers:
