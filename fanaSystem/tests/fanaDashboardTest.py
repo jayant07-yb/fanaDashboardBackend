@@ -107,7 +107,7 @@ def handle_fana_call():
     response = requests.post(
         f"{BASE_URL}/fanaDashboard/handleFanaCall/",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"table_id": TABLE_ID, "state": "calling", "req_start_time": datetime.datetime.now(datetime.timezone.utc).timestamp},
+        json={"table_id": TABLE_ID, "state": "calling", "req_start_time": datetime.datetime.now(datetime.timezone.utc).timestamp()},
     )
     print("[INFO] Handle Fana Call Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
@@ -119,7 +119,7 @@ def handle_fana_call_got_handled():
     response = requests.post(
         f"{BASE_URL}/fanaDashboard/handleFanaCall/",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"table_id": TABLE_ID, "state": "not calling", "req_start_time": datetime.datetime.now(datetime.timezone.utc).timestamp },
+        json={"table_id": TABLE_ID, "state": "not calling", "req_start_time": datetime.datetime.now(datetime.timezone.utc).timestamp()},
     )
     print("[INFO] Handle Fana Call Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
