@@ -16,6 +16,7 @@ TABLE_ID = "table_1"
 access_token = None
 order_reflected = False
 fana_call_reflected = False
+fana_call_handled_reflected = False
 
 stop_event = Event()
 
@@ -40,7 +41,7 @@ def get_jwt_token():
 
 # WebSocket Listener
 def websocket_listener(stop_event):
-    global order_reflected, fana_call_reflected, ws
+    global order_reflected, fana_call_reflected, ws, fana_call_handled_reflected
     try:
         print("[INFO] WebSocket connection established.")
         while not stop_event.is_set():
@@ -63,7 +64,11 @@ def websocket_listener(stop_event):
 
                 if event.get("message_type") == "table_state" and event.get("table_id") == TABLE_ID:
                     print("[INFO] Fana call reflected on dashboard.")
-                    fana_call_reflected = True
+                    if event.get("state") == "calling":
+                        fana_call_reflected = True
+                    elif event.get("state") == "not calling":
+                        fana_call_handled_reflected = True
+                        
             except Exception as e:
                 print(f"[ERROR] Error receiving WebSocket event: {e}")
                 break
@@ -106,10 +111,23 @@ def handle_fana_call():
     print("[INFO] Handle Fana Call Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
 
+# Handle Fana Call
+def handle_fana_call_got_handled():
+    global access_token
+    print("[INFO] Sending fana call...")
+    response = requests.post(
+        f"{BASE_URL}/fanaDashboard/handleFanaCall/",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"table_id": TABLE_ID, "state": "not calling", "time_taken": 1000},
+    )
+    print("[INFO] Handle Fana Call Response:", response.json())
+    return response.status_code == 200 and response.json().get("status") == "success"
+
+
 
 # Main Test Function
 def test_sequence():
-    global order_reflected, fana_call_reflected, ws, stop_event
+    global order_reflected, fana_call_reflected, ws, stop_event, fana_call_handled_reflected
 
     # Step 1: Get JWT Token
     tokens = get_jwt_token()
@@ -157,9 +175,21 @@ def test_sequence():
             print("[ERROR] Order not reflected on dashboard.")
         if not fana_call_reflected:
             print("[ERROR] Fana call not reflected on dashboard.")
+        # Step 7: Validate the handled state for fana call
+        #
+        time.sleep(5)
+        if not handle_fana_call_got_handled():
+            print("[ERROR] Test failed: Fana call handled not sent successfully.")
+            stop_event.set()
+            listener_thread.join()
+            print("Result: FAILED")
+            return
+        time.sleep(2)
+        if not fana_call_handled_reflected:
+            print("[ERROR] Test failed: Fana call handled not reflected on dashboard.")
 
         # Final Test Result
-        if order_reflected and fana_call_reflected:
+        if order_reflected and fana_call_reflected and fana_call_handled_reflected:
             print("Result: PASSED")
         else:
             print("Result: FAILED")
