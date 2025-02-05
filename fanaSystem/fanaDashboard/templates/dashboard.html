@@ -180,10 +180,12 @@
         // Handle WebSocket errors
         socket.onerror = function(error) {
             console.error("WebSocket error:", error);
+            handleLogout();
         };
 
         socket.onclose = function() {
             console.log("WebSocket connection closed");
+            handleLogout();
         };
 
         // Function to delete an order entry
