@@ -37,8 +37,8 @@ def handle_fana_call(request):
         data = json.loads(request.body)
         table_id = data.get('table_id')
         state = data.get('state')
-        time_taken = data.get('time_taken')
-        log_message = f"Table ID: {table_id}, State: {state}, Time Taken: {time_taken} ms"
+        req_start_time = data.get('req_start_time')
+        log_message = f"Table ID: {table_id}, State: {state}, Request time: {req_start_time}"
         print(log_message)
         logging.info(log_message)
         
