@@ -51,7 +51,7 @@ function handleLogin() {
         if (data.status === "success" && data.access) {
             // Step 2: Send access token (JWT) to Django to set the session
             console.log("Access token received, calling set_session with:", data.access);  // Debugging line
-            save_mode = "cookie";
+            save_mode = "session";
             if (save_mode == 'session')
             {
                 
