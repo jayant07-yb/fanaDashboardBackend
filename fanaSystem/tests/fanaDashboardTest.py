@@ -4,7 +4,6 @@ import time
 from websocket import create_connection
 from threading import Thread, Event
 import common as settings
-import datetime
 BASE_URL = settings.BASE_URL
 WS_URL = settings.WSL_SERVER_URL
 
@@ -64,7 +63,8 @@ def websocket_listener(stop_event):
                     order_reflected = True
 
                 if event.get("message_type") == "table_state" and event.get("table_id") == TABLE_ID:
-                    print("[INFO] Fana call reflected on dashboard.")
+                    event.get("")
+                    print("[INFO] Fana call reflected on dashboard with a delay of ", get_delay(int(event.get("req_start_time"))))
                     if event.get("state") == "calling":
                         fana_call_reflected = True
                     elif event.get("state") == "not calling":
@@ -99,15 +99,35 @@ def send_order():
     print("[INFO] Send Order Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
 
+def get_delay(received_timestamp):
+    # Get the current timestamp on the receiver side (in seconds)
+    receiver_timestamp = int(time.time())
+
+    # Calculate the delay in seconds
+    delay_seconds = receiver_timestamp - received_timestamp
+
+    # Convert the delay into hours, minutes, and seconds
+    hours = delay_seconds // 3600  # 1 hour = 3600 seconds
+    minutes = (delay_seconds % 3600) // 60  # Remaining minutes
+    seconds = delay_seconds % 60  # Remaining seconds
+
+    # Format the delay as "hours:minutes:seconds"
+    formatted_delay = f"{hours:02}:{minutes:02}:{seconds:02}"
+
+    # Print the formatted delay
+    return (f"Delay: {formatted_delay}")
+
 
 # Handle Fana Call
 def handle_fana_call():
     global access_token
-    print("[INFO] Sending fana call...")
+    curr_timestamp = int(time.time())
+    print("[INFO] Sending fana call... at ", curr_timestamp)
+
     response = requests.post(
         f"{BASE_URL}/fanaDashboard/handleFanaCall/",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"table_id": TABLE_ID, "state": "calling", "req_start_time": datetime.datetime.now(datetime.timezone.utc).timestamp()},
+        json={"table_id": TABLE_ID, "state": "calling", "req_start_time": curr_timestamp},
     )
     print("[INFO] Handle Fana Call Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
@@ -115,11 +135,13 @@ def handle_fana_call():
 # Handle Fana Call
 def handle_fana_call_got_handled():
     global access_token
-    print("[INFO] Sending fana call...")
+
+    curr_timestamp = int(time.time())
+    print("[INFO] Sending fana call... at ", curr_timestamp)
     response = requests.post(
         f"{BASE_URL}/fanaDashboard/handleFanaCall/",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"table_id": TABLE_ID, "state": "not calling", "req_start_time": datetime.datetime.now(datetime.timezone.utc).timestamp()},
+        json={"table_id": TABLE_ID, "state": "not calling", "req_start_time": curr_timestamp},
     )
     print("[INFO] Handle Fana Call Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
