@@ -7,9 +7,9 @@ def get_com_ports():
     ports = serial.tools.list_ports.comports()
     return [(port.device, f"{port.device} - {port.description}") for port in ports]
 
-def generate_esp32_code(wifi_name, wifi_password, table_id, server_ip):
-    server_url = f"http://{server_ip}:8000/fanaDashboard/handleFanaCall/"
-    template_path = os.path.join(os.path.dirname(__file__), 'tmp_non_reset_pin_code.cpp')
+def generate_esp32_code(wifi_name, wifi_password, table_id):
+    server_url = f"https://internals.getfana.com/fanaDashboard/handleFanaCall/"
+    template_path = os.path.join(os.path.dirname(__file__), 'esp_8266_template.cpp')
 
     with open(template_path, 'r') as template_file:
         code = template_file.read()
@@ -17,35 +17,39 @@ def generate_esp32_code(wifi_name, wifi_password, table_id, server_ip):
     code = code.replace('{wifi_name}', wifi_name)
     code = code.replace('{wifi_password}', wifi_password)
     code = code.replace('{server_url}', server_url)
-    code = code.replace('{table_id}', table_id)
+    code = code.replace('{table_id}', str(table_id))
 
     return code
 
-def update_platformio_ini(board_type):
-    ini_path = os.path.join(os.path.dirname(__file__), '..', 'platformio.ini')
+# def update_platformio_ini(board_type):
+#     ini_path = os.path.join(os.path.dirname(__file__), '..', 'platformio.ini')
     
-    with open(ini_path, 'r') as file:
-        lines = file.readlines()
+#     with open(ini_path, 'r') as file:
+#         lines = file.readlines()
 
-    # Modify or add board type
-    for i, line in enumerate(lines):
-        if line.startswith("board ="):
-            lines[i] = f"board = {board_type}\n"
-            break
-    else:
-        lines.append(f"\nboard = {board_type}\n")
+#     # Modify or add board type
+#     for i, line in enumerate(lines):
+#         if line.startswith("board ="):
+#             lines[i] = f"board = {board_type}\n"
+#             break
+#     else:
+#         lines.append(f"\nboard = {board_type}\n")
 
-    with open(ini_path, 'w') as file:
-        file.writelines(lines)
+#     with open(ini_path, 'w') as file:
+#         file.writelines(lines)
 
 def main():
     print("Fana Call ESP32 Setup CLI")
 
     # Take user inputs
-    server_ip = input("Enter Server IP: ")
+
+    table_id = 11
     table_id = input("Enter Table ID: ")
-    wifi_name = input("Enter WiFi Name: ")
-    wifi_password = input("Enter WiFi Password: ")
+    # wifi_name = input("Enter WiFi Name: ")
+    # wifi_password = input("Enter WiFi Password: ")
+
+    wifi_name ="comp"
+    wifi_password = "P90962u$"
 
     # List available COM ports
     com_ports = get_com_ports()
@@ -57,27 +61,18 @@ def main():
     for i, (port, desc) in enumerate(com_ports):
         print(f"{i + 1}. {desc}")
 
-    port_choice = int(input("Select a port (number): ")) - 1
-    port = com_ports[port_choice][0]
+    # port_choice = int(input("Select a port (number): ")) - 1
+    port = com_ports[2][0]
 
-    board_type = input("Enter ESP32 Board Type (default: esp32dev): ") or "esp32dev"
+    # board_type = input("Enter ESP32 Board Type (default: esp32dev): ") or "esp32dev"
     
     # Generate ESP32 code
-    code = generate_esp32_code(wifi_name, wifi_password, table_id, server_ip)
+    code = generate_esp32_code(wifi_name, wifi_password, table_id)
 
-    # Save the generated code
-    src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
-    if not os.path.exists(src_dir):
-        os.makedirs(src_dir)
-
-    with open(os.path.join(src_dir, 'main.cpp'), 'w') as f:
+    with open(os.path.join(os.path.dirname(__file__), 'src', 'main.cpp'), 'w') as f:
         f.write(code)
-
-    # Update platformio.ini with the correct board type
-    update_platformio_ini(board_type)
-
     try:
-        pio_project_dir = os.path.join(os.path.dirname(__file__), '..')
+        pio_project_dir = os.path.join(os.path.dirname(__file__))
 
         env = os.environ.copy()
         env['PLATFORMIO_UPLOAD_PORT'] = port

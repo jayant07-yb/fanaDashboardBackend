@@ -4,10 +4,10 @@
 #include <EEPROM.h>
 #include <Arduino.h>
 
-const char* ssid = "{wifi_name}";
-const char* password = "{wifi_password}";
-const char* serverUrl = "{server_url}";
-const char* table_id = "{table_id}";
+const char* ssid = "comp";
+const char* password = "P90962u$";
+const char* serverUrl = "https://internals.getfana.com/fanaDashboard/handleFanaCall/";
+const char* table_id = "11";
 unsigned long startTime;
 
 #define LED_PIN D0  // LED connected to D2
