@@ -59,6 +59,6 @@ class DashboardConsumer(AsyncWebsocketConsumer):
             "order_details": event.get("order_details", ""),
             "table_id": event.get("table_id", None),
             "state": event.get("state", None),
-            "req_start_time": event.get("req_start_time", 0)
+            "req_device_delay": event.get("req_device_delay", 0)
         }))
 
