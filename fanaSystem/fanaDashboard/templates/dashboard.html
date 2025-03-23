@@ -75,7 +75,7 @@
                 // Handle table state updates
                 const tableId = data.table_id;
                 const state = data.state;
-                const reqStartTime = data.req_start_time;
+                const reqDeviceDelay = data.req_device_delay;
                 const currentTime = new Date().toLocaleString();
 
                 if (state === "calling") {
@@ -87,7 +87,7 @@
                         tableEntry.innerHTML = `
                             <strong>Table ID:</strong> ${tableId}<br>
                             <span class="time"><strong>Time Received:</strong> ${currentTime}</span><br>
-                            <span class="time"><strong>Time Taken:</strong> ${reqStartTime} ms</span>
+                            <span class="time"><strong>Time Taken:</strong> ${reqDeviceDelay} ms</span>
                         `;
                         tableMap[tableId] = tableEntry;
                         tableList.prepend(tableEntry);

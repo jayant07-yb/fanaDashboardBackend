@@ -62,7 +62,7 @@ void sendStateRequest(State state) {
         http.addHeader("Content-Type", "application/json");
 
         String stateString = (state == CALLING) ? "calling" : "not calling";
-        String payload = "{\"table_id\": \"" + String(table_id) + "\", \"state\": \"" + stateString + "\", \"req_start_time\": " + String(startTime) + "}";
+        String payload = "{\"table_id\": \"" + String(table_id) + "\", \"state\": \"" + stateString + "\", \"req_device_delay\": " + String(mills() - startTime) + "}";
         Serial.println("Payload: " + payload);
 
         int httpResponseCode = http.POST(payload);
