@@ -37,8 +37,8 @@ def handle_fana_call(request):
         data = json.loads(request.body)
         table_id = data.get('table_id')
         state = data.get('state')
-        req_device_delay = data.get('req_device_delay')
-        log_message = f"Table ID: {table_id}, State: {state}, Request delay time: {req_device_delay}"
+        req_start_time = data.get('req_start_time')
+        log_message = f"Table ID: {table_id}, State: {state}, Request time: {req_start_time}"
         print(log_message)
         logging.info(log_message)
         
@@ -51,8 +51,7 @@ def handle_fana_call(request):
                     "type": "broadcast_message",
                     "message_type": "table_state",
                     "table_id": table_id,
-                    "state": state,
-                    "req_device_delay": req_device_delay
+                    "state": state
                 }
             )
             return JsonResponse({'status': 'success', 'message': 'Data broadcasted to WebSocket clients'})

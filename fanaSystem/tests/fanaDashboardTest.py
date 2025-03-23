@@ -64,7 +64,7 @@ def websocket_listener(stop_event):
 
                 if event.get("message_type") == "table_state" and event.get("table_id") == TABLE_ID:
                     event.get("")
-                    print("[INFO] Fana call reflected on dashboard with a delay of ", get_delay(int(event.get("req_device_delay"))))
+                    print("[INFO] Fana call reflected on dashboard with a delay of ", get_delay(int(event.get("req_start_time"))))
                     if event.get("state") == "calling":
                         fana_call_reflected = True
                     elif event.get("state") == "not calling":
@@ -127,7 +127,7 @@ def handle_fana_call():
     response = requests.post(
         f"{BASE_URL}/fanaDashboard/handleFanaCall/",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"table_id": TABLE_ID, "state": "calling", "req_device_delay": curr_timestamp},
+        json={"table_id": TABLE_ID, "state": "calling", "req_start_time": curr_timestamp},
     )
     print("[INFO] Handle Fana Call Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"
@@ -141,7 +141,7 @@ def handle_fana_call_got_handled():
     response = requests.post(
         f"{BASE_URL}/fanaDashboard/handleFanaCall/",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"table_id": TABLE_ID, "state": "not calling", "req_device_delay": curr_timestamp},
+        json={"table_id": TABLE_ID, "state": "not calling", "req_start_time": curr_timestamp},
     )
     print("[INFO] Handle Fana Call Response:", response.json())
     return response.status_code == 200 and response.json().get("status") == "success"

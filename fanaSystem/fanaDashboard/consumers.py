@@ -35,7 +35,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         message_type = data.get("message_type", None)
         order_id = data.get("order_id", None)
         order_details = data.get("order_details", "")
-        req_device_delay = data.get("req_device_delay", 0)
+        req_start_time = data.get("req_start_time", 0)
 
         # Send the processed data to the group
         await self.channel_layer.group_send(
@@ -47,7 +47,7 @@ class DashboardConsumer(AsyncWebsocketConsumer):
                 "order_details": order_details,
                 "table_id": table_id,
                 "state": state,
-                "req_device_delay": req_device_delay,
+                "req_start_time": req_start_time,
             }
         )
 
