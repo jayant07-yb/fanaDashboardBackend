@@ -12,19 +12,40 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+import socket
+from datetime import timedelta
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "fanaSystem.settings")
+
+# Fetch the secret key
+SECRET_KEY = os.getenv("SECRET_KEY", "your_default_secret_key")
+
+# Get the server’s IP address or hostname
+DEFAULT_SERVER_HOST = socket.gethostbyname(socket.gethostname())
+
+# Environment variable to override with a custom AUTH_SERVER_IP if needed
+AUTH_SERVER_IP = os.getenv("AUTH_SERVER_IP", DEFAULT_SERVER_HOST)
+
+# PUBLIC_IP OR DOMAIN RELATED SETTINGS
+PUBLIC_IP = "internals.getfana.com"
+
+# Construct the full URL for the authentication endpoint
+BASE_URL = f"https://{PUBLIC_IP if PUBLIC_IP else 'localhost:8000'}"
+AUTH_SERVER_LOGIN_URL = f"{BASE_URL}/fanaAuthenticator/api/token/"
+WSL_SERVER_URL = f"https://{PUBLIC_IP if PUBLIC_IP else 'localhost:8000'}/ws/dashboard/"
+SEND_ORDER_TO_DASHBOARD_URL =  f"{BASE_URL}/fanaDashboard/receiveOrder/"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-yanopv@xd)#_v3ixk0d&6+a!v&jn(-l-b*et&c$(4#=x=1#55("
+# SECRET_KEY = "django-insecure-yanopv@xd)#_v3ixk0d&6+a!v&jn(-l-b*et&c$(4#=x=1#55("
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True #env.bool("DEBUG", default=False)
 
 # SECURITY WARNING: update this when you have the production host
 ALLOWED_HOSTS = ['*']
@@ -42,20 +63,33 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "fanaDashboard",
     "fanaCallSetup",
-    "fanaInsight",
+    "channels",
+    "fanaAuthenticator",
+    "corsheaders",
 ]
 
 ASGI_APPLICATION = 'fanaSystem.asgi.application'
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "fanaDashboard.middleware.JWTAuthenticationMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+SECURE_COOKIES = False  # Change to True in production
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'OPTIONS',
+]
+
 
 ROOT_URLCONF = "fanaSystem.urls"
 
@@ -78,6 +112,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "fanaSystem.wsgi.application"
 
 
+
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -87,7 +123,6 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -123,20 +158,72 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = "static/"
+# STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# URL to access static files
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'fanaCallSetup', 'static'),
-    os.path.join(BASE_DIR, 'fanaDashboard', 'static'),
-]
+
+# Additional directories where Django will look for static files
+#STATICFILES_DIRS = [
+#    os.path.join(BASE_DIR, 'static', 'fanaCallSetup'),
+#    os.path.join(BASE_DIR, 'static', 'fanaDashboard'),
+#]
+
+# Directory where static files will be collected for production
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # fanaSystem/settings.py
 LOGIN_URL = '/fanaDashboard/login/'
 LOGIN_REDIRECT_URL = '/fanaDashboard/'
+
+# settings.py
+
+
+
+# Channels Settings
+ASGI_APPLICATION = "fanaSystem.asgi.application"
+
+# Redis Channel Layer
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],  # Redis server details
+        },
+    },
+} if PUBLIC_IP else {
+    "default": {
+        "BACKEND": 'channels.layers.InMemoryChannelLayer'
+    }
+}
+
+
+
+from datetime import timedelta
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',  # Ensure authentication by default
+    ],
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,  # Ensure this is consistent across services
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}

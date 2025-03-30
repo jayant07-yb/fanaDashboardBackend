@@ -1,0 +1,111 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login to Dashboard</title>
+    <link rel="stylesheet" href="{% static 'login.css' %}">
+
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+
+            <!-- Hidden App ID field -->
+            <input type="text" id="app_id" name="app_id" value="{{ app_id }}" readonly style="display: none;">
+
+            <button type="button" onclick="handleLogin()">Login</button>
+        </form>
+        <p id="error-message"></p>
+    </div>
+
+    <script>
+
+function handleLogin() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    console.log("auth_server_login_url:", "{{ auth_server_login_url }}");
+    console.log("CSRF token:", "{{ csrf_token }}");
+
+    // Step 1: Authenticate with the external server and get the JWT
+    fetch("{{ auth_server_login_url }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Auth server response:", data);  // Debugging line
+
+        if (data.status === "success" && data.access) {
+            // Step 2: Send access token (JWT) to Django to set the session
+            console.log("Access token received, calling set_session with:", data.access);  // Debugging line
+            save_mode = "session";
+            if (save_mode == 'session')
+            {
+                
+                fetch("{% url 'set_session' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({ jwt: data.access })  // Send the access token
+                })
+                .then(response => response.json())
+                .then(sessionData => {
+                    console.log("set_session response:", sessionData);  // Debugging line
+    
+                    if (sessionData.status === "success") {
+                        sessionStorage.setItem("jwt_token", data.access);
+    
+                            // Set JWT token in cookie with a 1-day expiration
+                        const expires = new Date();
+                        expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)); // 1 day
+                        document.cookie = `jwt_token=${data.access}; expires=${expires.toUTCString()}; path=/; Secure; SameSite=Strict`;
+    
+                        window.location.href = "{% url 'dashboard' %}";
+                    } else {
+                        document.getElementById('error-message').textContent = sessionData.message || "Failed to set session";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error during session setup:", error);
+                    document.getElementById('error-message').textContent = "Session setup failed. Please try again.";
+                });
+            } else {
+                sessionStorage.setItem("jwt_token", data.access);
+                // Set JWT token in cookie with a 1-day expiration
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)); // 1 day
+                document.cookie = `jwt_token=${data.access}; expires=${expires.toUTCString()}; path=/; Secure; SameSite=Strict`;
+
+                window.location.href = "{% url 'dashboard' %}";
+            }
+
+        } else {
+            document.getElementById('error-message').textContent = data.message || "Login failed";
+        }
+    })
+    .catch(error => {
+        console.error("Error during login:", error);
+        document.getElementById('error-message').textContent = "Login failed. Please try again.";
+    });
+}
+
+
+   </script>
+    
+</body>
+</html>

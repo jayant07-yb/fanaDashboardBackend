@@ -1,0 +1,182 @@
+
+
+/* Basic styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f3f0ff;
+    color: #333;
+    display: flex;
+    margin: 0;
+}
+
+h1 {
+    color: #5f4b8b;
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+/* Sidebar styling */
+.sidebar {
+    width: 200px;
+    background-color: #333;
+    color: white;
+    height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: width 0.3s;
+    overflow: hidden;        /* Prevents scrolling */
+    position: fixed;         /* Fixes the sidebar to the viewport */
+
+}
+
+.sidebar.minimized {
+    width: 30px;  /* Adjust to fit icon size */
+    align-items: center;
+}
+
+.sidebar h2 {
+    color: lavender;
+    margin: 0 0 10px 0;
+    font-size: 1.5em;
+}
+
+.sidebar p {
+    margin: 10px 0;
+}
+
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
+    width: 100%;
+}
+
+.sidebar ul li {
+    margin: 20px 0;
+    width: 100%;
+}
+
+.sidebar ul li button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1em;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    align-self: flex-end;
+    margin-bottom: 20px;
+}
+
+.sidebar-content {
+    visibility: visible;
+    height: 100%;
+}
+
+.sidebar-content.minimized {
+    visibility: hidden;
+}
+
+.logout-button {
+    width: 70px;
+    height: 30px;
+    position: fixed;
+    bottom: 10%;
+    align-self: center;
+    
+}
+
+/* Main content area */
+.main-content {
+    margin-left: 250px;  /* Starts next to expanded sidebar */
+    padding: 20px;
+    transition: margin-left 0.3s;
+    width: calc(100% - 200px); /* Adjusts width according to sidebar */
+}
+
+/* Adjust main content margin when sidebar is minimized */
+.main-content.expanded {
+    margin-left: 70px;     /* Starts next to minimized sidebar */
+    width: calc(100% - 60px);  /* Adjusts width for minimized sidebar */
+}
+
+
+
+/* Container for entries, using grid layout */
+.entry-list {
+    display: grid;
+    gap: 20px;
+    padding: 20px;
+}
+            
+/* Responsive grid: 2 columns for large screens */
+@media (min-width: 768px) {
+    .entry-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Responsive grid: 2 columns for medium screens */
+@media  (max-width: 767px) {
+    .entry-list {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
+/* Card styling */
+.dashboard-event-entry {
+    background-color: #fff;
+    border: 1px solid #e0d4ff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(95, 75, 139, 0.1);
+    padding: 20px; /* Reduced padding to fit content better */
+    margin: 10px;
+    transition: transform 0.2s;
+    position: relative;
+    overflow-x: auto; /* Adds horizontal scroll if content overflows */
+    width: 600px;
+}
+
+/* Table cell styling */
+.dashboard-event-entry th,
+.dashboard-event-entry td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    word-wrap: break-word; /* Wraps text in cells */
+    box-sizing: border-box;
+}
+
+/* Ensures table header cells don't overflow */
+.dashboard-event-entry th {
+    white-space: nowrap;
+}
+
+/* Button styling for Done button */
+.dashboard-event-entry button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 5px 10px;
+    background-color: #604b8ac0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.dashboard-event-entry button:hover {
+    background-color: #53208de6;
+}
+

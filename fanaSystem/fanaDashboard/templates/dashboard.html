@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Calls Dashboard</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+
+        <div id="sidebar-content" class="sidebar-content">
+            <h2>My Profile</h2>
+            <p>Username: {{ username }}</p>
+            <p>Grp No: <span id="grp-no">XYZ</span></p>
+            <button onclick="handleLogout()" class="logout-button">Logout</button>
+        </div>
+    </div>
+
+    <div class="main-content" id="main-content">
+        <h1>Smart Calls Dashboard</h1>
+        
+        <!-- Filter Dropdown -->
+        <!-- <label for="filterSelect">Filter: </label>
+        <select id="filterSelect" onchange="filterContent()">
+            <option value="all">All</option>
+            <option value="table_state">Table State</option>
+            <option value="order_update">Order Updates</option>
+        </select> -->
+        
+        <h2>Table State</h2>
+        <div id="tableList" ></div>
+
+        <h2>Orders</h2>
+        <div id="orderList" ></div>
+    </div>
+
+    <script>
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebarContent = document.getElementById("sidebar-content");
+            const sidebar = document.getElementById("sidebar");
+            const mainContent = document.getElementById("main-content");
+            sidebar.classList.toggle("minimized");
+            sidebarContent.classList.toggle("minimized");
+            mainContent.classList.toggle("expanded");
+        }
+
+        // Logout function
+        function handleLogout() {
+            sessionStorage.removeItem('jwt_token');
+            window.location.href = "{% url 'login_view' %}";
+        }
+        
+        const jwtToken = sessionStorage.getItem("jwt_token"); // Retrieve token from session storage
+        if (!jwtToken) {
+            console.error("No JWT token found in session storage. Redirecting to login...");
+             window.location.href = "{% url 'login_view' %}";
+        }
+
+        // WebSocket connection for receiving messages
+        const socket = new WebSocket('{{ wsl_server_url }}');
+        const tableList = document.getElementById("tableList");
+        const orderList = document.getElementById("orderList");
+        const tableMap = {};
+        const orderMap = {};
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const messageType = data.message_type;
+
+            if (messageType === "table_state") {
+                // Handle table state updates
+                const tableId = data.table_id;
+                const state = data.state;
+                const reqStartTime = data.req_start_time;
+                const currentTime = new Date().toLocaleString();
+
+                if (state === "calling") {
+                    if (!tableMap[tableId]) {
+                        const tableEntry = document.createElement("div");
+                        tableEntry.className = "dashboard-event-entry";  // Apply card style
+                        tableEntry.id = `table-${tableId}`;
+                        tableEntry.setAttribute("data-type", "table_state");
+                        tableEntry.innerHTML = `
+                            <strong>Table ID:</strong> ${tableId}<br>
+                            <span class="time"><strong>Time Received:</strong> ${currentTime}</span><br>
+                            <span class="time"><strong>Time Taken:</strong> ${reqStartTime} ms</span>
+                        `;
+                        tableMap[tableId] = tableEntry;
+                        tableList.prepend(tableEntry);
+                    } else {
+                        const existingEntry = tableMap[tableId];
+                        existingEntry.querySelector(".time").innerHTML = `<strong>Time Received:</strong> ${currentTime}`;
+                    }
+                } else if (state === "not calling" && tableMap[tableId]) {
+                    const tableEntry = tableMap[tableId];
+                    tableList.removeChild(tableEntry);
+                    delete tableMap[tableId];
+                }
+            } else if (messageType === "order_update") {
+                // Handle order updates
+                const orderId = data.order_id;
+                const orderDetails = data.order_details;
+
+                if (!orderMap[orderId]) {
+                    const orderEntry = document.createElement("div");
+                    orderEntry.className = "dashboard-event-entry"; // Apply card style
+                    orderEntry.id = `order-${orderId}`;
+                    orderEntry.setAttribute("data-type", "order_update");
+
+                    // Parse order_details if it's a string
+                    let parsedOrderDetails;
+                    try {
+                        parsedOrderDetails = typeof orderDetails === "string" ? JSON.parse(orderDetails) : orderDetails;
+                    } catch (error) {
+                        console.error("Failed to parse order_details:", error);
+                        return; // Exit if parsing fails
+                    }
+
+                    // Extract items and totalAmount from parsedOrderDetails
+                    const { items, totalAmount } = parsedOrderDetails;
+
+                    // Render each item in order_details
+                    let orderItemsHtml = "";
+
+                    if (Array.isArray(items)) {
+                        orderItemsHtml += `
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+                            <thead>
+                                <tr>
+                                <th style="border: 1px solid #ddd; padding: 8px;">#</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Name</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Cost</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Quantity</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        `;
+
+                        items.forEach((item, index) => {
+                            orderItemsHtml += `
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.name}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">₹${item.cost}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.quantity}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">₹${item.itemTotal}</td>
+                            </tr>
+                            `;
+                        });
+
+                        orderItemsHtml += `
+                            </tbody>
+                            </table>
+                        `;
+                        } else {
+                        console.warn("Expected items to be an array, but it is not.");
+                        }
+
+                        orderEntry.innerHTML = `
+                        <strong>Order ID:</strong> ${orderId}<br>
+                        <strong>Details:</strong><br> ${orderItemsHtml}
+                        <strong>Total Amount:</strong> ₹${totalAmount}<br>
+                        <button onclick="deleteOrder('${orderId}')">Done</button>
+                        `;
+
+                        orderMap[orderId] = orderEntry;
+                        orderList.prepend(orderEntry);
+
+                    }
+
+
+            }
+        };
+
+        // Handle WebSocket errors
+        socket.onerror = function(error) {
+            console.error("WebSocket error:", error);
+            handleLogout();
+        };
+
+        socket.onclose = function() {
+            console.log("WebSocket connection closed");
+            handleLogout();
+        };
+
+        // Function to delete an order entry
+        function deleteOrder(orderId) {
+            const orderEntry = document.getElementById(`order-${orderId}`);
+            if (orderEntry) {
+                orderList.removeChild(orderEntry);
+                delete orderMap[orderId];
+            }
+        }
+
+        // Function to filter content based on dropdown selection
+        function filterContent() {
+            const filterValue = document.getElementById("filterSelect").value;
+            const entries = document.querySelectorAll(".entry");
+
+            entries.forEach(entry => {
+                if (filterValue === "all") {
+                    entry.style.display = "block"; // Show all entries
+                } else if (entry.getAttribute("data-type") === filterValue) {
+                    entry.style.display = "block"; // Show matching entries
+                } else {
+                    entry.style.display = "none";  // Hide non-matching entries
+                }
+            });
+        }
+    </script>
+</body>
+</html>

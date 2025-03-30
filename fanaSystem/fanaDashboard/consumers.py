@@ -1,68 +1,64 @@
-import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import async_to_sync
-import threading
-import time
-from fanaCallSetup.models import FanaCallRequest
+from channels.exceptions import DenyConnection
+import json
+from django.contrib.auth.models import AnonymousUser
 
-data_changed = False
 
 class DashboardConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = 'dashboard_updates'
+        print("Received connection request")
+        print("The current scope", self.scope)
+        user = self.scope.get("user")
 
-        await self.channel_layer.group_add(
-            self.group_name,
-            self.channel_name
-        )
+        print("Got the user scope", user)
+        if not user or isinstance(user, AnonymousUser):
+            print("[ERROR] User is anonymous or not set")
+            raise DenyConnection("User is not authenticated.")
 
+        print(f"[DEBUG] User authenticated: {user}")
+        await self.channel_layer.group_add("dashboard_group", self.channel_name)
         await self.accept()
+        print("[DEBUG] Connection accepted")
 
-        # Start a background thread for polling
-        self.polling_thread = threading.Thread(target=self.poll_for_changes)
-        self.polling_thread.start()
+    # Handle the received message
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.group_name,
-            self.channel_name
+        # Remove the user from the "dashboard_group" on disconnect
+        await self.channel_layer.group_discard("dashboard_group", self.channel_name)
+
+    async def receive(self, text_data):
+        # Handle messages received from the WebSocket client if needed
+        data = json.loads(text_data)
+
+        table_id = data.get("table_id", None)
+        state = data.get("state", None)
+        message_type = data.get("message_type", None)
+        order_id = data.get("order_id", None)
+        order_details = data.get("order_details", "")
+        req_start_time = data.get("req_start_time", 0)
+
+        # Send the processed data to the group
+        await self.channel_layer.group_send(
+            "dashboard_group",
+            {
+                "type": "broadcast_message",
+                "message_type": message_type,
+                "order_id": order_id,
+                "order_details": order_details,
+                "table_id": table_id,
+                "state": state,
+                "req_start_time": req_start_time,
+            }
         )
 
-        # Stop the polling thread
-        self.polling_thread.do_run = False
+    async def broadcast_message(self, event):
+        # Send a message to WebSocket clients in the group with default values if fields are missing
+        await self.send(text_data=json.dumps({
+            "message_type": event.get("message_type", None),
+            "order_id": event.get("order_id", None),
+            "order_details": event.get("order_details", ""),
+            "table_id": event.get("table_id", None),
+            "state": event.get("state", None),
+            "req_start_time": event.get("req_start_time", 0)
+        }))
 
-    def poll_for_changes(self):
-        t = threading.currentThread()
-        global data_changed
-        while getattr(t, "do_run", True):
-            time.sleep(2)  # Polling interval
-
-            # Check for changes in the state
-            if data_changed:
-                async_to_sync(self.channel_layer.group_send)(
-                    self.group_name,
-                    {
-                        'type': 'send_update',
-                        'text': self.get_updated_data()
-                    }
-                )
-                data_changed = False
-
-    def get_updated_data(self):
-        # Fetch the current state of all requests
-        requests = FanaCallRequest.objects.all()
-        data = {
-            "requests": [
-                {
-                    "table_id": request.table_id,
-                    "call_waiter_state": request.call_waiter_state,
-                    "bring_bill_state": request.bring_bill_state,
-                    "order_state": request.order_state,
-                    "bring_water_state": request.bring_water_state,
-                } for request in requests
-            ]
-        }
-        return data
-
-    async def send_update(self, event):
-        await self.send(text_data=json.dumps(event["text"]))

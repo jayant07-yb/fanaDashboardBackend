@@ -1,90 +1,112 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-extern "C" {
-  #include "user_interface.h"
-}
+#include <EEPROM.h>
 
-// Constants
 const char* ssid = "comp";
 const char* password = "P90962u$";
-const char* serverUrl = "http://192.168.1.5:8000/fanaDashboard/handleFanaCall/";
+const char* serverUrl = "http://192.168.1.12:8000/fanaDashboard/handleFanaCall/";
 const char* table_id = "11";
 
-// Create a WiFiClient object
+enum State {
+    NO_STATE_SET = -1,
+    NOT_CALLING = 0,
+    CALLING = 1
+};
+
 WiFiClient wifiClient;
+volatile bool shouldSend = false; // Flag to indicate when to send data
+const int wakeUpPin = D6; // Define wake-up pin
+
+// Interrupt service routine
+void IRAM_ATTR onWakeUpPinHigh() {
+    shouldSend = true; // Set flag when D3 goes high
+}
+
+// Retrieve or toggle state
+State getLatestState() {
+    EEPROM.begin(512);
+    int storedState = EEPROM.read(0);
+    
+    if (storedState == NO_STATE_SET) {
+        storedState = NOT_CALLING;
+        EEPROM.write(0, storedState);
+        EEPROM.commit();
+    } else {
+        storedState = (storedState == NOT_CALLING) ? CALLING : NOT_CALLING;
+        EEPROM.write(0, storedState);
+        EEPROM.commit();
+    }
+
+    EEPROM.end();
+    return static_cast<State>(storedState);
+}
 
 void connectToWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     unsigned long startTime = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - startTime) < 10000) { // Increase timeout to 10 seconds
+    while (WiFi.status() != WL_CONNECTED && (millis() - startTime) < 10000) { // 10-second timeout
         delay(500);
         Serial.print(".");
     }
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("Connected to WiFi");
+        Serial.println("\nConnected to WiFi");
     } else {
-        Serial.println("Failed to connect to WiFi");
+        Serial.println("\nFailed to connect to WiFi");
     }
 }
 
-void sendCombinedRequest(const char* combinedState) {
+void sendStateRequest(State state, unsigned long timeTaken) {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
+        Serial.println("Attempting to send HTTP POST request...");
         http.begin(wifiClient, serverUrl);
 
         http.addHeader("Content-Type", "application/json");
 
-        String payload = "{\"combined_state\": \"" + String(combinedState) + "\", \"table_id\": \"" + String(table_id) + "\"}";
-        Serial.println(payload);
+        String stateString = (state == CALLING) ? "calling" : "not calling";
+        String payload = "{\"table_id\": \"" + String(table_id) + "\", \"state\": \"" + stateString + "\", \"time_taken\": " + String(timeTaken) + "}";
+        Serial.println("Payload: " + payload);
 
         int httpResponseCode = http.POST(payload);
 
         if (httpResponseCode > 0) {
-            String response = http.getString();
+            Serial.print("HTTP Response code: ");
             Serial.println(httpResponseCode);
+            String response = http.getString();
+            Serial.println("Response from server:");
             Serial.println(response);
         } else {
-            Serial.println("Error on sending POST");
+            Serial.print("Error on sending POST: ");
+            Serial.println(httpResponseCode);
         }
         http.end();
+    } else {
+        Serial.println("WiFi not connected, cannot send POST request.");
     }
 }
 
 void setup() {
     Serial.begin(9600);
-    // Serial.setTimeout(2000);
+    Serial.println("Starting ESP8266");
 
-    // // Wait for serial to initialize.
-    // while(!Serial.available()) { }
+    pinMode(wakeUpPin, INPUT); // Set D3 as input
+    attachInterrupt(digitalPinToInterrupt(wakeUpPin), onWakeUpPinHigh, RISING); // Trigger on high signal
 
-    // // Deep sleep mode until RESET pin is connected to a LOW signal (for example pushbutton or magnetic reed switch)
-    // Serial.println("I'm awake, but I'm going into deep sleep mode until RESET pin is connected to a LOW signal");
-
-    pinMode(D1, INPUT_PULLUP);
-    pinMode(D2, INPUT_PULLUP);
-    pinMode(D3, INPUT_PULLUP);
-    pinMode(D4, INPUT_PULLUP);
-    pinMode(D6, OUTPUT);
-    // No need to attach interrupt, ESP8266 will wake up from deep sleep automatically on reset
+    // Initialize Wi-Fi
     connectToWiFi();
-
-    
-    // Create a combined state string
-    char combinedState[5];
-    combinedState[0] = digitalRead(D1) == LOW ? '1' : '0';
-    combinedState[1] = digitalRead(D2) == LOW ? '1' : '0';
-    combinedState[2] = digitalRead(D3) == LOW ? '1' : '0';
-    combinedState[3] = digitalRead(D4) == LOW ? '1' : '0';
-    combinedState[4] = '\0'; // Null-terminate the string
-
-    // Send the combined state
-    sendCombinedRequest(combinedState);
-
-    // Enter deep sleep mode
-    ESP.deepSleep(0); // Sleep forever, wakes up on external wakeup
 }
 
 void loop() {
-    delay(200);  // Ensure the sleep mode is entered
+    if (shouldSend) {
+        shouldSend = false; // Reset flag
+
+        unsigned long startTime = millis();
+        State currentState = getLatestState();
+
+        // Send the HTTP request
+        unsigned long timeTaken = millis() - startTime;
+        sendStateRequest(currentState, timeTaken);
+    }
+    delay(100); // Short delay to reduce CPU load
 }

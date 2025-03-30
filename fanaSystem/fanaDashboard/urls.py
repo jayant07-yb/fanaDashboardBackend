@@ -15,14 +15,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 # fanaDashboard/urls.py
+
 from django.urls import path
 from . import views
-from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
-    path('', views.dashboard_view, name='fanaDashboard'),
+    path('login/', views.login_view, name='login_view'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     path('handleFanaCall/', views.handle_fana_call, name='handleFanaCall'),
-    path('login/', views.login_view, name='login'),
-    path('signup/', views.signup_view, name='signup'),
-    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    path('setSession/', views.set_session, name='set_session'),
+    path('receiveOrder/', views.receive_order, name='receive_order')
 ]
+

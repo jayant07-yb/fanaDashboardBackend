@@ -2,26 +2,29 @@
 #include <ESP8266HTTPClient.h>
 #include <EEPROM.h>
 
-// Constants
 const char* ssid = "{wifi_name}";
 const char* password = "{wifi_password}";
 const char* serverUrl = "{server_url}";
 const char* table_id = "{table_id}";
 
-// Define states using enum
 enum State {
     NO_STATE_SET = -1,
     NOT_CALLING = 0,
     CALLING = 1
 };
 
-// Create a WiFiClient object
 WiFiClient wifiClient;
+volatile bool shouldSend = false; // Flag to indicate when to send data
+const int wakeUpPin = D6; // Define wake-up pin
 
-// Function to get the latest state or initialize it if not set
+// Interrupt service routine
+void IRAM_ATTR onWakeUpPinHigh() {
+    shouldSend = true; // Set flag when D3 goes high
+}
+
+// Retrieve or toggle state
 State getLatestState() {
     EEPROM.begin(512);
-
     int storedState = EEPROM.read(0);
     
     if (storedState == NO_STATE_SET) {
@@ -57,7 +60,7 @@ void sendStateRequest(State state, unsigned long timeTaken) {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
         Serial.println("Attempting to send HTTP POST request...");
-        http.begin(wifiClient, serverUrl);  // Now using the wifiClient object
+        http.begin(wifiClient, serverUrl);
 
         http.addHeader("Content-Type", "application/json");
 
@@ -87,16 +90,23 @@ void setup() {
     Serial.begin(9600);
     Serial.println("Starting ESP8266");
 
-    unsigned long startTime = millis();  // Record start time
-    State currentState = getLatestState();
+    pinMode(wakeUpPin, INPUT); // Set D3 as input
+    attachInterrupt(digitalPinToInterrupt(wakeUpPin), onWakeUpPinHigh, RISING); // Trigger on high signal
 
+    // Initialize Wi-Fi
     connectToWiFi();
-    unsigned long timeTaken = millis() - startTime;  // Calculate time taken to connect and send
-    sendStateRequest(currentState, timeTaken);  // Send the request with time taken
-
-    ESP.deepSleep(0);  // Enter deep sleep until external wake-up
 }
 
 void loop() {
-    delay(200);
+    if (shouldSend) {
+        shouldSend = false; // Reset flag
+
+        unsigned long startTime = millis();
+        State currentState = getLatestState();
+
+        // Send the HTTP request
+        unsigned long timeTaken = millis() - startTime;
+        sendStateRequest(currentState, timeTaken);
+    }
+    delay(100); // Short delay to reduce CPU load
 }
